@@ -224,7 +224,7 @@ export default function QueuePage() {
 
                   <div className="bg-white/20 rounded-lg p-2 md:p-4">
                     <p className="text-gold-100 text-xs md:text-sm mb-1">السعر</p>
-                    <p className="text-white font-semibold text-xs md:text-lg">{services[currentBooking.service_id]?.price || '-'} ر.س</p>
+                    <p className="text-white font-semibold text-xs md:text-lg">{services[currentBooking.service_id]?.price || '-'} ج.م</p>
                   </div>
 
                   <div className="bg-white/20 rounded-lg p-2 md:p-4">
@@ -299,7 +299,7 @@ export default function QueuePage() {
                                 : booking.service_id ? '⚠️ غير موجودة' : '❌ بلا خدمة'}
                             </span>
                             {services[booking.service_id]?.price && (
-                              <span className="truncate">💰 {services[booking.service_id]?.price} ر.س</span>
+                              <span className="truncate">💰 {services[booking.service_id]?.price} ج.م</span>
                             )}
                           </div>
                         </div>

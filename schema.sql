@@ -133,22 +133,22 @@ INSERT INTO barbers (name, phone, email, specialties, experience_years) VALUES
   ('علي محمد', '0503456789', 'ali@elking.com', '{"حلاق عام"}', 3)
 ON CONFLICT DO NOTHING;
 
--- Sample Services
+-- Sample Services (Prices in Egyptian Pounds)
 INSERT INTO services (name_ar, name_en, description_ar, description_en, price, duration_minutes, category) VALUES
-  ('حلاق عام', 'Regular Haircut', 'قص شعر عادي احترافي', 'Professional regular haircut', 25.00, 30, 'haircut'),
-  ('حلاق لحية', 'Beard Trim', 'تشذيب وتنسيق اللحية', 'Beard trimming and shaping', 15.00, 15, 'beard'),
-  ('حلاق أطفال', 'Kids Haircut', 'قص شعر آمن للأطفال', 'Safe haircut for kids', 20.00, 25, 'kids'),
-  ('حلاق + لحية', 'Haircut + Beard', 'قص شعر مع لحية', 'Hair and beard combo', 35.00, 45, 'combo')
+  ('حلاق عام', 'Regular Haircut', 'قص شعر عادي احترافي', 'Professional regular haircut', 150.00, 30, 'haircut'),
+  ('حلاق لحية', 'Beard Trim', 'تشذيب وتنسيق اللحية', 'Beard trimming and shaping', 100.00, 15, 'beard'),
+  ('حلاق أطفال', 'Kids Haircut', 'قص شعر آمن للأطفال', 'Safe haircut for kids', 120.00, 25, 'kids'),
+  ('حلاق + لحية', 'Haircut + Beard', 'قص شعر مع لحية', 'Hair and beard combo', 250.00, 45, 'combo')
 ON CONFLICT DO NOTHING;
 
 -- Sample Shop Settings
 INSERT INTO shop_settings (key, value) VALUES
   ('shop_name', 'Elking Barber Shop'),
-  ('shop_phone', '+966501234567'),
+  ('shop_phone', '+20101234567'),
   ('shop_email', 'info@elkingshop.com'),
-  ('shop_address', 'الرياض، المملكة العربية السعودية'),
-  ('timezone', 'Asia/Riyadh'),
-  ('currency', 'SAR'),
+  ('shop_address', 'القاهرة، جمهورية مصر العربية'),
+  ('timezone', 'Africa/Cairo'),
+  ('currency', 'EGP'),
   ('booking_advance_days', '30'),
   ('min_advance_hours', '1'),
   ('break_time_minutes', '15')
