@@ -112,29 +112,7 @@ export default function BookingPage() {
     fetchData()
   }, [])
 
-  useEffect(() => {
-    if (selectedBarber && selectedDate) {
-      // Refresh booked slots immediately and in parallel
-      const refreshData = async () => {
-        console.log(`🔄 Fetching bookings for barber ${selectedBarber} on ${selectedDate}`)
-        await Promise.all([
-          checkBookedSlots(),
-          fetchWorkingHoursForBarber()
-        ])
-      }
-      
-      refreshData()
-      
-      // Set up interval to refresh every 3 seconds for live updates
-      const refreshInterval = setInterval(() => {
-        console.log(`🔄 Auto-refresh bookings...`)
-        checkBookedSlots()
-      }, 3000)
 
-      return () => clearInterval(refreshInterval)
-    }
-    return undefined
-  }, [selectedBarber, selectedDate])
 
   useEffect(() => {
     if (customerPhone) {
@@ -203,74 +181,80 @@ export default function BookingPage() {
     }
   }
 
-  const checkBookedSlots = async () => {
-    try {
-      if (!selectedBarber || !selectedDate) {
-        setBookedSlots([])
-        return
-      }
-
-      const { data, error } = await supabase
-        .from('bookings')
-        .select('booking_time')
-        .eq('barber_id', selectedBarber)
-        .eq('booking_date', selectedDate)
-        .in('status', ['pending', 'confirmed'])
-
-      if (error) {
-        console.error('❌ Error checking bookings:', error)
-        setBookedSlots([])
-        return
-      }
-
-      const booked = (data || []).map((b: any) => b.booking_time)
-      setBookedSlots(booked)
-      console.log(`✅ Booked slots for ${selectedDate}:`, booked)
-    } catch (err: any) {
-      console.error('❌ Error checking bookings:', err)
-      setBookedSlots([])
-    }
-  }
-
-  const fetchWorkingHoursForBarber = async () => {
-    try {
-      const bookingDate = new Date(selectedDate + 'T00:00:00')
-      const dayOfWeek = bookingDate.getDay()
-
-      const { data, error } = await supabase
-        .from('working_hours')
-        .select('*')
-        .eq('barber_id', selectedBarber)
-        .eq('day_of_week', dayOfWeek)
-        .limit(1)
-
-      if (error) throw error
-
-      if (data && data.length > 0) {
-        const hours = data[0] as WorkingHours
-        setWorkingHours([hours])
+  useEffect(() => {
+    if (selectedBarber && selectedDate) {
+      // Refresh booked slots immediately and in parallel
+      const refreshData = async () => {
+        console.log(`🔄 Fetching bookings for barber ${selectedBarber} on ${selectedDate}`)
         
-        // Calculate available slots based on working hours
-        if (hours.is_working) {
-          const slots = TIME_SLOTS.filter(slot => 
-            compareTimeStrings(slot, hours.start_time) >= 0 &&
-            compareTimeStrings(slot, hours.end_time) < 0
-          )
-          setAvailableSlots(slots)
-        } else {
-          setAvailableSlots([])
+        // Get booked slots
+        try {
+          const { data, error } = await supabase
+            .from('bookings')
+            .select('booking_time')
+            .eq('barber_id', selectedBarber)
+            .eq('booking_date', selectedDate)
+            .in('status', ['pending', 'confirmed'])
+
+          if (!error && data) {
+            const booked = data.map((b: any) => b.booking_time)
+            setBookedSlots(booked)
+            console.log(`✅ Booked slots for ${selectedDate}:`, booked)
+          } else {
+            setBookedSlots([])
+          }
+        } catch (err: any) {
+          console.error('❌ Error checking bookings:', err)
+          setBookedSlots([])
         }
-      } else {
-        // If no working hours defined, use all slots (for backward compatibility)
-        setWorkingHours([])
-        setAvailableSlots(TIME_SLOTS)
+
+        // Get working hours
+        try {
+          const bookingDate = new Date(selectedDate + 'T00:00:00')
+          const dayOfWeek = bookingDate.getDay()
+
+          const { data, error } = await supabase
+            .from('working_hours')
+            .select('*')
+            .eq('barber_id', selectedBarber)
+            .eq('day_of_week', dayOfWeek)
+            .limit(1)
+
+          if (!error && data && data.length > 0) {
+            const hours = data[0] as WorkingHours
+            setWorkingHours([hours])
+            
+            if (hours.is_working) {
+              const slots = TIME_SLOTS.filter(slot => 
+                compareTimeStrings(slot, hours.start_time) >= 0 &&
+                compareTimeStrings(slot, hours.end_time) < 0
+              )
+              setAvailableSlots(slots)
+            } else {
+              setAvailableSlots([])
+            }
+          } else {
+            setWorkingHours([])
+            setAvailableSlots(TIME_SLOTS)
+          }
+        } catch (err: any) {
+          console.error('Error fetching working hours:', err)
+          setAvailableSlots(TIME_SLOTS)
+        }
       }
-    } catch (err: any) {
-      console.error('Error fetching working hours:', err)
-      // If error, use all slots as fallback
-      setAvailableSlots(TIME_SLOTS)
+      
+      refreshData()
+      
+      // Set up interval to refresh every 3 seconds for live updates
+      const refreshInterval = setInterval(() => {
+        console.log(`🔄 Auto-refresh bookings...`)
+        refreshData()
+      }, 3000)
+
+      return () => clearInterval(refreshInterval)
     }
-  }
+    return undefined
+  }, [selectedBarber, selectedDate])
 
   const checkExistingBooking = async () => {
     try {
@@ -432,8 +416,7 @@ export default function BookingPage() {
         toast.error('❌ آسف! تم حجز هذا الوقت للتو من قبل عميل آخر. اختر وقت آخر.')
         setConfirmationStep('confirm')
         setIsConfirming(false)
-        // Refresh the booked slots
-        await checkBookedSlots()
+        // Note: Booked slots will be refreshed in 3 seconds by the interval
         return
       }
 
