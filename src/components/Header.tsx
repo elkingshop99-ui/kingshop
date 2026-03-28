@@ -90,16 +90,16 @@ export default function Header({ isStaff, onLogout }: HeaderProps) {
 
         {/* Mobile Layout */}
         <div className="md:hidden">
-          <div className="flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-1 text-gold-400 hover:text-gold-300 transition-colors">
+          <div className="flex items-center justify-between gap-2">
+            <Link to="/" className="flex items-center gap-1 text-gold-400 hover:text-gold-300 transition-colors flex-shrink-0">
               <Scissors size={24} />
               <span className="text-lg font-bold">Elking</span>
             </Link>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 onClick={toggleLanguage}
-                className="px-2 py-1 rounded text-xs bg-slate-800 hover:bg-slate-700 text-white"
+                className="px-2 py-1 rounded text-xs bg-slate-800 hover:bg-slate-700 text-white font-medium"
               >
                 {i18n.language === 'ar' ? 'EN' : 'AR'}
               </button>
@@ -107,9 +107,10 @@ export default function Header({ isStaff, onLogout }: HeaderProps) {
               {isStaff && (
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="p-2 bg-slate-800 hover:bg-slate-700 rounded text-white"
+                  className="p-2 bg-gold-500 hover:bg-gold-600 rounded text-white font-bold text-lg transition-colors"
+                  title="لوحة التحكم"
                 >
-                  {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                  {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
                 </button>
               )}
             </div>
@@ -117,45 +118,45 @@ export default function Header({ isStaff, onLogout }: HeaderProps) {
 
           {/* Mobile Menu */}
           {isStaff && mobileMenuOpen && (
-            <nav className="mt-3 flex flex-col gap-2 bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+            <nav className="mt-3 flex flex-col gap-2 bg-slate-800/50 p-3 rounded-lg border border-slate-700 animate-in fade-in slide-in-from-top-2">
               <Link
                 to="/queue"
-                className={`${navLinkClass('/queue')} text-center`}
+                className={`${navLinkClass('/queue')} text-center text-sm`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 🎯 الطابور
               </Link>
               <Link
                 to="/dashboard"
-                className={`${navLinkClass('/dashboard')} text-center`}
+                className={`${navLinkClass('/dashboard')} text-center text-sm`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 📊 لوحة التحكم
               </Link>
               <Link
                 to="/staff-management"
-                className={`${navLinkClass('/staff-management')} text-center`}
+                className={`${navLinkClass('/staff-management')} text-center text-sm`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 👥 الموظفين
               </Link>
               <Link
                 to="/admin-settings"
-                className={`${navLinkClass('/admin-settings')} text-center`}
+                className={`${navLinkClass('/admin-settings')} text-center text-sm`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 ⚙️ الإدارة
               </Link>
               <Link
                 to="/working-hours"
-                className={`${navLinkClass('/working-hours')} text-center`}
+                className={`${navLinkClass('/working-hours')} text-center text-sm`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 🕒 أوقات العمل
               </Link>
               <button
                 onClick={handleLogout}
-                className="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium transition-colors text-center"
+                className="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium transition-colors text-center text-sm"
               >
                 خروج
               </button>

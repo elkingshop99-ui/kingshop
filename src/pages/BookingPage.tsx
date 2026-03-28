@@ -739,46 +739,46 @@ export default function BookingPage() {
 
       {/* Confirmation Modal */}
       {showConfirmation && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={handleBackdropClick}>
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl max-w-2xl w-full shadow-2xl animate-in fade-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 md:p-4" onClick={handleBackdropClick}>
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in-95 duration-300">
             {confirmationStep === 'confirm' ? (
               <>
                 {/* Confirmation Header */}
-                <div className="bg-gradient-to-r from-gold-500 to-gold-600 px-8 py-6 text-white rounded-t-xl">
-                  <h2 className="text-3xl font-bold">تأكيد الحجز</h2>
-                  <p className="text-gold-100 mt-1">تأكد من البيانات قبل الحجز</p>
+                <div className="bg-gradient-to-r from-gold-500 to-gold-600 px-4 md:px-8 py-4 md:py-6 text-white rounded-t-xl sticky top-0 z-10">
+                  <h2 className="text-2xl md:text-3xl font-bold">تأكيد الحجز</h2>
+                  <p className="text-gold-100 mt-1 text-sm md:text-base">تأكد من البيانات قبل الحجز</p>
                 </div>
 
                 {/* Booking Details */}
-                <div className="px-8 py-8 space-y-6">
+                <div className="px-4 md:px-8 py-6 md:py-8 space-y-4 md:space-y-6">
                   {/* Details Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
                     {/* Customer Name */}
-                    <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600/50">
-                      <p className="text-slate-400 text-sm mb-2">الاسم</p>
-                      <p className="text-white text-lg font-semibold">{pendingBooking?.customer_name}</p>
+                    <div className="bg-slate-700/50 rounded-lg p-3 md:p-4 border border-slate-600/50">
+                      <p className="text-slate-400 text-xs md:text-sm mb-2">الاسم</p>
+                      <p className="text-white text-base md:text-lg font-semibold truncate">{pendingBooking?.customer_name}</p>
                     </div>
 
                     {/* Phone */}
-                    <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600/50">
-                      <p className="text-slate-400 text-sm mb-2">رقم الهاتف</p>
-                      <p className="text-white text-lg font-semibold font-mono">{pendingBooking?.customer_phone}</p>
-                      <p className="text-slate-500 text-xs mt-2">الصيغ المقبولة: 01XXXXXXXXX أو 201XXXXXXXXX</p>
+                    <div className="bg-slate-700/50 rounded-lg p-3 md:p-4 border border-slate-600/50">
+                      <p className="text-slate-400 text-xs md:text-sm mb-2">رقم الهاتف</p>
+                      <p className="text-white text-base md:text-lg font-semibold font-mono text-center">{pendingBooking?.customer_phone}</p>
+                      <p className="text-slate-500 text-xs mt-2 text-center">الصيغ المقبولة: 01XXXXXXXXX</p>
                     </div>
 
                     {/* Barber */}
-                    <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600/50">
-                      <p className="text-slate-400 text-sm mb-2">الحلاق</p>
-                      <p className="text-white text-lg font-semibold">
+                    <div className="bg-slate-700/50 rounded-lg p-3 md:p-4 border border-slate-600/50">
+                      <p className="text-slate-400 text-xs md:text-sm mb-2">الحلاق</p>
+                      <p className="text-white text-base md:text-lg font-semibold truncate">
                         {pendingBooking?.barber_name || 'جاري التحميل...'}
                       </p>
                     </div>
 
                     {/* Service */}
-                    <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600/50">
-                      <p className="text-slate-400 text-sm mb-2">الخدمة</p>
+                    <div className="bg-slate-700/50 rounded-lg p-3 md:p-4 border border-slate-600/50">
+                      <p className="text-slate-400 text-xs md:text-sm mb-2">الخدمة</p>
                       <div>
-                        <p className="text-white text-lg font-semibold">
+                        <p className="text-white text-base md:text-lg font-semibold truncate">
                           {pendingBooking?.service_name || 'جاري التحميل...'}
                         </p>
                         <p className="text-slate-300 text-xs mt-1">
@@ -791,34 +791,34 @@ export default function BookingPage() {
                     </div>
 
                     {/* Date */}
-                    <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600/50">
-                      <p className="text-slate-400 text-sm mb-2">التاريخ</p>
-                      <p className="text-white text-lg font-semibold">{formatDateArabic(pendingBooking?.booking_date || '')}</p>
+                    <div className="bg-slate-700/50 rounded-lg p-3 md:p-4 border border-slate-600/50">
+                      <p className="text-slate-400 text-xs md:text-sm mb-2">التاريخ</p>
+                      <p className="text-white text-sm md:text-lg font-semibold">{formatDateArabic(pendingBooking?.booking_date || '')}</p>
                     </div>
 
                     {/* Time */}
-                    <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600/50">
-                      <p className="text-slate-400 text-sm mb-2">الوقت</p>
-                      <p className="text-white text-lg font-semibold text-center">{pendingBooking?.booking_time}</p>
+                    <div className="bg-slate-700/50 rounded-lg p-3 md:p-4 border border-slate-600/50">
+                      <p className="text-slate-400 text-xs md:text-sm mb-2">الوقت</p>
+                      <p className="text-white text-xl md:text-2xl font-semibold text-center">{pendingBooking?.booking_time}</p>
                     </div>
                   </div>
 
                   {/* Notes if exists */}
                   {pendingBooking?.notes && (
-                    <div className="bg-blue-500/10 border border-blue-500/50 rounded-lg p-4">
-                      <p className="text-blue-300 text-sm mb-2">ملاحظاتك</p>
-                      <p className="text-blue-100">{pendingBooking.notes}</p>
+                    <div className="bg-blue-500/10 border border-blue-500/50 rounded-lg p-3 md:p-4">
+                      <p className="text-blue-300 text-xs md:text-sm mb-2">ملاحظاتك</p>
+                      <p className="text-blue-100 text-xs md:text-sm">{pendingBooking.notes}</p>
                     </div>
                   )}
                 </div>
 
                 {/* Action Buttons */}
-                <div className="px-8 py-6 bg-slate-800/50 border-t border-slate-700 flex gap-4 rounded-b-xl">
+                <div className="px-4 md:px-8 py-4 md:py-6 bg-slate-800/50 border-t border-slate-700 flex flex-col md:flex-row gap-2 md:gap-4 rounded-b-xl">
                   {/* Cancel Button - Red */}
                   <button
                     onClick={handleCancelBooking}
                     disabled={isConfirming}
-                    className="flex-1 px-6 py-3 bg-red-500/20 hover:bg-red-500/30 border border-red-500 text-red-300 rounded-lg font-semibold transition-colors disabled:opacity-50"
+                    className="flex-1 px-3 md:px-6 py-2 md:py-3 bg-red-500/20 hover:bg-red-500/30 border border-red-500 text-red-300 rounded-lg text-xs md:text-sm font-semibold transition-colors disabled:opacity-50 order-3 md:order-1"
                   >
                     إلغاء
                   </button>
@@ -827,7 +827,7 @@ export default function BookingPage() {
                   <button
                     onClick={handleEditBooking}
                     disabled={isConfirming}
-                    className="flex-1 px-6 py-3 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500 text-blue-300 rounded-lg font-semibold transition-colors disabled:opacity-50"
+                    className="flex-1 px-3 md:px-6 py-2 md:py-3 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500 text-blue-300 rounded-lg text-xs md:text-sm font-semibold transition-colors disabled:opacity-50 order-2 md:order-2"
                   >
                     تعديل
                   </button>
@@ -836,7 +836,7 @@ export default function BookingPage() {
                   <button
                     onClick={handleConfirmBooking}
                     disabled={isConfirming}
-                    className="flex-1 px-6 py-3 bg-green-500 hover:bg-green-600 disabled:bg-green-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 px-3 md:px-6 py-2 md:py-3 bg-green-500 hover:bg-green-600 disabled:bg-green-700 text-white rounded-lg text-xs md:text-sm font-semibold transition-colors flex items-center justify-center gap-1 md:gap-2 order-1 md:order-3"
                   >
                     {isConfirming ? 'جاري...' : '✓ تأكيد الحجز'}
                   </button>
@@ -845,22 +845,22 @@ export default function BookingPage() {
             ) : (
               <>
                 {/* Success State */}
-                <div className="px-8 py-12 flex flex-col items-center justify-center text-center">
+                <div className="px-4 md:px-8 py-8 md:py-12 flex flex-col items-center justify-center text-center">
                   {/* Success Icon with Animation */}
-                  <div className="mb-6 relative">
+                  <div className="mb-4 md:mb-6 relative">
                     <div className="absolute inset-0 bg-green-500 rounded-full animate-pulse blur-lg"></div>
-                    <CheckCircle2 size={80} className="text-green-400 relative animate-bounce" />
+                    <CheckCircle2 size={60} className="text-green-400 relative animate-bounce md:w-20 md:h-20" />
                   </div>
 
                   {/* Success Message */}
-                  <h3 className="text-4xl font-bold text-white mb-3">تم التأكيد! 🎉</h3>
-                  <p className="text-xl text-slate-300 mb-2">حجزك تم بنجاح</p>
-                  <p className="text-slate-400">سنتواصل معك على الرقم {pendingBooking?.customer_phone}</p>
+                  <h3 className="text-2xl md:text-4xl font-bold text-white mb-2 md:mb-3">تم التأكيد! 🎉</h3>
+                  <p className="text-lg md:text-xl text-slate-300 mb-2">حجزك تم بنجاح</p>
+                  <p className="text-sm md:text-base text-slate-400">سنتواصل معك على الرقم {pendingBooking?.customer_phone}</p>
 
                   {/* Booking Summary */}
-                  <div className="mt-8 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-lg p-6 w-full">
-                    <p className="text-green-300 text-sm mb-3 font-semibold">📋 بيانات الحجز</p>
-                    <div className="space-y-2 text-right">
+                  <div className="mt-6 md:mt-8 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-lg p-4 md:p-6 w-full">
+                    <p className="text-green-300 text-xs md:text-sm mb-3 font-semibold">📋 بيانات الحجز</p>
+                    <div className="space-y-1 md:space-y-2 text-right text-xs md:text-sm">
                       <p className="text-slate-200">
                         <span className="text-slate-400">الحلاق:</span> {pendingBooking?.barber_name}
                       </p>
@@ -883,18 +883,18 @@ export default function BookingPage() {
                   </div>
 
                   {/* Closing text */}
-                  <div className="mt-8 text-center">
-                    <p className="text-slate-300 text-sm mb-4">
+                  <div className="mt-6 md:mt-8 text-center">
+                    <p className="text-slate-300 text-xs md:text-sm mb-4">
                       ✅ سيتم إغلاق هذه النافذة تلقائياً خلال...
                     </p>
-                    <div className="inline-block bg-gold-500/20 border-2 border-gold-500 rounded-full px-6 py-3">
-                      <p className="text-gold-400 text-3xl font-bold">{closingCountdown}</p>
+                    <div className="inline-block bg-gold-500/20 border-2 border-gold-500 rounded-full px-4 md:px-6 py-2 md:py-3">
+                      <p className="text-gold-400 text-2xl md:text-3xl font-bold">{closingCountdown}</p>
                     </div>
-                    <p className="text-slate-400 text-xs mt-4">الرجاء الانتظار</p>
+                    <p className="text-slate-400 text-xs mt-2 md:mt-4">الرجاء الانتظار</p>
                   </div>
 
                   {/* Developer Footer Info */}
-                  <div className="mt-8 pt-6 border-t border-slate-700 text-center">
+                  <div className="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-slate-700 text-center w-full">
                     <p className="text-xs text-slate-500">
                       © تطوير بواسطة <span className="text-slate-400 font-semibold">Youssef & Mohamed</span>
                     </p>

@@ -114,55 +114,57 @@ export default function DashboardPage() {
             <p className="text-slate-300 text-lg">لا توجد حجوزات</p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {bookings.map((booking) => (
-              <div key={booking.id} className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-bold text-white">{booking.customer_name}</h3>
-                    <p className="text-slate-400">{booking.customer_phone}</p>
+              <div key={booking.id} className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-4 md:p-6 w-full">
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-0 mb-4">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base md:text-lg font-bold text-white truncate">{booking.customer_name}</h3>
+                    <p className="text-slate-400 text-sm truncate">{booking.customer_phone}</p>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(booking.status)}`}>
+                  <span className={`px-3 py-1 rounded-full text-xs md:text-sm font-medium border flex-shrink-0 ${getStatusColor(booking.status)}`}>
                     {t(`booking_status.${booking.status}`)}
                   </span>
                 </div>
 
-                <div className="space-y-2 mb-4 text-sm">
-                  <p className="text-slate-300">
-                    <strong>الحلاق:</strong> {booking.barber?.name}
+                <div className="space-y-2 mb-4 text-xs md:text-sm divide-y divide-slate-700">
+                  <p className="text-slate-300 py-2">
+                    <strong className="text-slate-200 block md:inline">الحلاق: </strong><span className="text-white font-semibold">{booking.barber?.name || '—'}</span>
                   </p>
-                  <p className="text-slate-300">
-                    <strong>الخدمة:</strong> {booking.service?.name_ar}
+                  <p className="text-slate-300 py-2">
+                    <strong className="text-slate-200 block md:inline">الخدمة: </strong><span className="text-white font-semibold">{booking.service?.name_ar || '—'}</span>
                   </p>
-                  <p className="text-slate-300">
-                    <strong>الموعد:</strong> {booking.booking_time}
+                  <p className="text-slate-300 py-2">
+                    <strong className="text-slate-200 block md:inline">الموعد: </strong><span className="text-gold-400 font-semibold">{booking.booking_time}</span>
                   </p>
-                  <p className="text-slate-300">
-                    <strong>التاريخ:</strong>{' '}
-                    {format(new Date(booking.booking_date), 'EEEE، d MMMM yyyy', {
-                      locale: i18n.language === 'ar' ? ar : undefined,
-                    })}
+                  <p className="text-slate-300 py-2">
+                    <strong className="text-slate-200 block md:inline">التاريخ: </strong>
+                    <span className="text-white font-semibold text-xs md:text-sm">
+                      {format(new Date(booking.booking_date), 'EEEE، d MMMM yyyy', {
+                        locale: i18n.language === 'ar' ? ar : undefined,
+                      })}
+                    </span>
                   </p>
                   {booking.notes && (
-                    <p className="text-slate-300">
-                      <strong>ملاحظات:</strong> {booking.notes}
+                    <p className="text-slate-300 py-2">
+                      <strong className="text-slate-200 block md:inline">ملاحظات: </strong><span className="text-white">{booking.notes}</span>
                     </p>
                   )}
                 </div>
 
                 {booking.status === 'pending' && (
-                  <div className="flex gap-2">
+                  <div className="flex flex-col md:flex-row gap-2 md:gap-2">
                     <button
                       onClick={() => updateStatus(booking.id, 'confirmed')}
-                      className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                      className="flex-1 px-2 md:px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs md:text-sm font-medium transition-colors flex items-center justify-center gap-1 md:gap-2 whitespace-nowrap"
                     >
-                      <CheckCircle size={16} /> تأكيد
+                      <CheckCircle size={14} className="hidden md:block" /> <CheckCircle size={12} className="md:hidden" /> تأكيد
                     </button>
                     <button
                       onClick={() => updateStatus(booking.id, 'cancelled')}
-                      className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                      className="flex-1 px-2 md:px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs md:text-sm font-medium transition-colors flex items-center justify-center gap-1 md:gap-2 whitespace-nowrap"
                     >
-                      <XCircle size={16} /> إلغاء
+                      <XCircle size={14} className="hidden md:block" /> <XCircle size={12} className="md:hidden" /> إلغاء
                     </button>
                   </div>
                 )}
