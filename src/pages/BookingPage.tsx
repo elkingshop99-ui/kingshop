@@ -158,12 +158,15 @@ export default function BookingPage() {
   const fetchData = async () => {
     try {
       const [barbersRes, servicesRes] = await Promise.all([
-        supabase.from('barbers').select('*').eq('is_active', true),
-        supabase.from('services').select('*').eq('is_active', true),
+        supabase.from('barbers').select('*'),
+        supabase.from('services').select('*'),
       ])
 
       if (barbersRes.error) throw barbersRes.error
       if (servicesRes.error) throw servicesRes.error
+
+      console.log('✅ Fetched barbers:', barbersRes.data)
+      console.log('✅ Fetched services:', servicesRes.data)
 
       setBarbers(barbersRes.data || [])
       setServices(servicesRes.data || [])
@@ -368,9 +371,16 @@ export default function BookingPage() {
     // Show confirmation modal instead of submitting directly
     const normalizedPhone = normalizePhone(customerPhone)
     
-    // Get barber and service names
+    // Get barber and service names - with fallback
     const barberData = barbers.find(b => b.id === selectedBarber)
     const serviceData = services.find(s => s.id === selectedService)
+    
+    console.log('🔍 Selected Barber ID:', selectedBarber)
+    console.log('🔍 Available Barbers:', barbers.map(b => ({ id: b.id, name: b.name })))
+    console.log('🔍 Matched Barber Data:', barberData)
+    console.log('🔍 Selected Service ID:', selectedService)
+    console.log('🔍 Available Services:', services.map(s => ({ id: s.id, name_ar: s.name_ar })))
+    console.log('🔍 Matched Service Data:', serviceData)
     
     // Normalize the selected time to HH:MM format
     const normalizeTimeHelper = (time: string): string => {
@@ -384,8 +394,8 @@ export default function BookingPage() {
     const booking = {
       barber_id: selectedBarber,
       service_id: selectedService,
-      barber_name: barberData?.name || '',
-      service_name: serviceData?.name_ar || '',
+      barber_name: barberData?.name || selectedBarber + ' (ID)',  // Show ID if name missing
+      service_name: serviceData?.name_ar || selectedService + ' (Service)',  // Show ID if name missing
       service_price: serviceData?.price || 0,
       service_duration: serviceData?.duration_minutes || 0,
       customer_name: customerName.trim(),
@@ -397,6 +407,7 @@ export default function BookingPage() {
       notes: notes?.trim() || null,
     }
 
+    console.log('📋 Pending Booking:', booking)
     setPendingBooking(booking)
     setShowConfirmation(true)
     setConfirmationStep('confirm')
