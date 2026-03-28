@@ -4,41 +4,12 @@ import { supabase, Barber, Service, Booking } from '@/db/supabase'
 import toast from 'react-hot-toast'
 import { AlertCircle, Clock, CheckCircle2 } from 'lucide-react'
 
-// Generate time slots based on interval (in minutes)
-const generateTimeSlots = (interval: number = 30): string[] => {
-  const slots: string[] = []
-  let hours = 9
-  let minutes = 0
-  
-  // Morning slots: 09:00 - 13:00
-  while (hours < 13 || (hours === 13 && minutes === 0)) {
-    slots.push(`${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`)
-    minutes += interval
-    if (minutes >= 60) {
-      hours += 1
-      minutes = 0
-    }
-  }
-  
-  // Afternoon slots: 14:00 - 17:00
-  hours = 14
-  minutes = 0
-  while (hours < 17) {
-    slots.push(`${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`)
-    minutes += interval
-    if (minutes >= 60) {
-      hours += 1
-      minutes = 0
-    }
-  }
-  
-  return slots
-}
-
-// Default 30-minute slots
-const TIME_SLOTS_30 = generateTimeSlots(30)
-const TIME_SLOTS_15 = generateTimeSlots(15)
-const TIME_SLOTS_60 = generateTimeSlots(60)
+// Fixed time slots - 30 minute intervals
+const TIME_SLOTS = [
+  '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+  '12:00', '12:30', '13:00',
+  '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
+]
 
 interface WorkingHours {
   id: string
@@ -132,9 +103,6 @@ export default function BookingPage() {
   const [customerEmail, setCustomerEmail] = useState('')
   const [notes, setNotes] = useState('')
   
-  // Dynamic time slots based on service duration
-  const [currentTimeSlots, setCurrentTimeSlots] = useState<string[]>(TIME_SLOTS_30)
-  
   // Confirmation modal state
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [pendingBooking, setPendingBooking] = useState<any>(null)
@@ -145,28 +113,6 @@ export default function BookingPage() {
   useEffect(() => {
     fetchData()
   }, [])
-
-  // Update time slots when service duration changes
-  useEffect(() => {
-    if (selectedService) {
-      const service = services.find(s => s.id === selectedService)
-      if (service) {
-        const duration = service.duration_minutes || 30
-        
-        // Choose slots based on duration
-        if (duration <= 15) {
-          setCurrentTimeSlots(TIME_SLOTS_15)
-          console.log(`📅 15-min slots for ${duration}min service`)
-        } else if (duration <= 30) {
-          setCurrentTimeSlots(TIME_SLOTS_30)
-          console.log(`📅 30-min slots for ${duration}min service`)
-        } else {
-          setCurrentTimeSlots(TIME_SLOTS_60)
-          console.log(`📅 60-min slots for ${duration}min service`)
-        }
-      }
-    }
-  }, [selectedService, services])
 
   useEffect(() => {
     if (customerPhone) {
@@ -305,7 +251,7 @@ export default function BookingPage() {
             setWorkingHours([hours])
             
             if (hours.is_working) {
-              const slots = currentTimeSlots.filter(slot => 
+              const slots = TIME_SLOTS.filter(slot => 
                 compareTimeStrings(slot, hours.start_time) >= 0 &&
                 compareTimeStrings(slot, hours.end_time) < 0
               )
@@ -317,12 +263,12 @@ export default function BookingPage() {
             }
           } else {
             setWorkingHours([])
-            setAvailableSlots(currentTimeSlots)
+            setAvailableSlots(TIME_SLOTS)
             console.log('⚠️ No working hours defined, using all slots')
           }
         } catch (err: any) {
           console.error('Error fetching working hours:', err)
-          setAvailableSlots(currentTimeSlots)
+          setAvailableSlots(TIME_SLOTS)
         }
       }
       
@@ -663,8 +609,8 @@ export default function BookingPage() {
               )}
 
               <div className="grid grid-cols-4 gap-2 mb-4">
-                {currentTimeSlots.length > 0 ? (
-                  currentTimeSlots.map((slot) => {
+                {TIME_SLOTS.length > 0 ? (
+                  TIME_SLOTS.map((slot) => {
                     const isBooked = bookedSlots.includes(slot)
                     const isPast = isPastTime(slot, selectedDate)
                     const isOutsideWorkingHours = !availableSlots.includes(slot)
