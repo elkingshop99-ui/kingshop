@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import BookingPage from './pages/BookingPage'
 import DashboardPage from './pages/DashboardPage'
 import LoginPage from './pages/LoginPage'
+import StaffManagementPage from './pages/StaffManagementPage'
 
 // Components
 import Header from './components/Header'
@@ -31,6 +32,7 @@ function App() {
           <Route path="/" element={<BookingPage />} />
           <Route path="/login" element={<LoginPage onLoginSuccess={() => setIsStaff(true)} />} />
           <Route path="/dashboard" element={isStaff ? <DashboardPage /> : <Navigate to="/login" />} />
+          <Route path="/staff-management" element={isStaff ? <StaffManagementPage /> : <Navigate to="/login" />} />
         </Routes>
       </BrowserRouter>
       <Toaster position="top-center" />

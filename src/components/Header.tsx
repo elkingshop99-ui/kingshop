@@ -50,6 +50,12 @@ export default function Header({ isStaff, onLogout }: HeaderProps) {
               >
                 {t('header.dashboard')}
               </Link>
+              <Link
+                to="/staff-management"
+                className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white transition-colors font-medium"
+              >
+                الموظفين
+              </Link>
               <button
                 onClick={handleLogout}
                 className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors font-medium"
