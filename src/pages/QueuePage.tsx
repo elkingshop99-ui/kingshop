@@ -3,11 +3,21 @@ import { supabase, Booking } from '@/db/supabase'
 import toast from 'react-hot-toast'
 import { Check, X, Clock, Phone } from 'lucide-react'
 
+// Format date to Arabic format
+const formatDateArabic = (dateStr: string) => {
+  const date = new Date(dateStr + 'T00:00:00')
+  const days = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
+  const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+  return `${days[date.getDay()]}، ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`
+}
+
 export default function QueuePage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [barbers, setBarbers] = useState<{ [key: string]: string }>({})
+  const [services, setServices] = useState<{ [key: string]: any }>({})
   const [loading, setLoading] = useState(true)
   const [refreshTime, setRefreshTime] = useState(14)
+  const [incompleteBookings, setIncompleteBookings] = useState<number>(0)
 
   useEffect(() => {
     fetchData()
@@ -56,6 +66,12 @@ export default function QueuePage() {
 
       if (bookingsError) throw bookingsError
 
+      // Count incomplete bookings
+      const incomplete = (bookingsData || []).filter(
+        b => !b.barber_id || b.barber_id === '' || !b.service_id || b.service_id === ''
+      ).length
+      setIncompleteBookings(incomplete)
+
       // Fetch barbers for mapping
       const { data: barbersData, error: barbersError } = await supabase
         .from('barbers')
@@ -63,13 +79,26 @@ export default function QueuePage() {
 
       if (barbersError) throw barbersError
 
+      // Fetch services for mapping
+      const { data: servicesData, error: servicesError } = await supabase
+        .from('services')
+        .select('id, name_ar, price, duration_minutes')
+
+      if (servicesError) throw servicesError
+
       const barbersMap: { [key: string]: string } = {}
       ;(barbersData || []).forEach((b: any) => {
         barbersMap[b.id] = b.name
       })
 
+      const servicesMap: { [key: string]: any } = {}
+      ;(servicesData || []).forEach((s: any) => {
+        servicesMap[s.id] = s
+      })
+
       setBookings(bookingsData || [])
       setBarbers(barbersMap)
+      setServices(servicesMap)
     } catch (err: any) {
       console.error('Error fetching queue:', err)
       toast.error('خطأ في تحميل الطابور')
@@ -131,7 +160,19 @@ export default function QueuePage() {
 
         {loading ? (
           <div className="text-center text-slate-400 text-lg">جاري التحميل...</div>
-        ) : currentBooking ? (
+        ) : (
+          <>
+            {incompleteBookings > 0 && (
+              <div className="bg-red-500/20 border border-red-500 rounded-lg p-4 mb-8 flex gap-3">
+                <div className="text-red-300 font-semibold">⚠️ تحذير</div>
+                <div className="text-red-200 text-sm">
+                  يوجد <strong>{incompleteBookings}</strong> حجز {incompleteBookings === 1 ? 'بيانات ناقصة' : 'بيانات ناقصة'} (بدون حلاق أو خدمة). 
+                  يرجى تصحيح البيانات مباشرة من قاعدة البيانات.
+                </div>
+              </div>
+            )}
+
+            {currentBooking ? (
           <>
             {/* Current Customer - Big Hero */}
             <div className="bg-gradient-to-br from-gold-500 to-gold-600 rounded-xl md:rounded-2xl p-6 md:p-12 mb-8 md:mb-12 shadow-2xl border-2 border-gold-400">
@@ -149,13 +190,41 @@ export default function QueuePage() {
                   </div>
 
                   <div className="bg-white/20 rounded-lg p-2 md:p-4">
+                    <p className="text-gold-100 text-xs md:text-sm mb-1">التاريخ</p>
+                    <p className="text-white font-semibold text-xs md:text-lg">{formatDateArabic(currentBooking.booking_date)}</p>
+                  </div>
+
+                  <div className="bg-white/20 rounded-lg p-2 md:p-4">
                     <p className="text-gold-100 text-xs md:text-sm mb-1">الوقت</p>
                     <p className="text-white font-semibold text-xs md:text-lg">{currentBooking.booking_time}</p>
                   </div>
 
                   <div className="bg-white/20 rounded-lg p-2 md:p-4">
                     <p className="text-gold-100 text-xs md:text-sm mb-1">الحلاق</p>
-                    <p className="text-white font-semibold text-xs md:text-lg truncate">{barbers[currentBooking.barber_id] || 'N/A'}</p>
+                    <p className="text-white font-semibold text-xs md:text-lg truncate">
+                      {barbers[currentBooking.barber_id] 
+                        ? barbers[currentBooking.barber_id] 
+                        : currentBooking.barber_id ? '⚠️ غير موجود' : '❌ لم يتم التحديد'}
+                    </p>
+                  </div>
+
+                  <div className="bg-white/20 rounded-lg p-2 md:p-4">
+                    <p className="text-gold-100 text-xs md:text-sm mb-1">الخدمة</p>
+                    <p className="text-white font-semibold text-xs md:text-lg truncate">
+                      {services[currentBooking.service_id]?.name_ar 
+                        ? services[currentBooking.service_id]?.name_ar 
+                        : currentBooking.service_id ? '⚠️ غير موجودة' : '❌ لم يتم التحديد'}
+                    </p>
+                  </div>
+
+                  <div className="bg-white/20 rounded-lg p-2 md:p-4">
+                    <p className="text-gold-100 text-xs md:text-sm mb-1">المدة</p>
+                    <p className="text-white font-semibold text-xs md:text-lg">{services[currentBooking.service_id]?.duration_minutes || '-'} دقيقة</p>
+                  </div>
+
+                  <div className="bg-white/20 rounded-lg p-2 md:p-4">
+                    <p className="text-gold-100 text-xs md:text-sm mb-1">السعر</p>
+                    <p className="text-white font-semibold text-xs md:text-lg">{services[currentBooking.service_id]?.price || '-'} ر.س</p>
                   </div>
 
                   <div className="bg-white/20 rounded-lg p-2 md:p-4">
@@ -204,7 +273,13 @@ export default function QueuePage() {
 
                         <div className="flex-1 min-w-0">
                           <p className="text-white font-semibold text-sm md:text-lg truncate">{booking.customer_name}</p>
-                          <div className="flex flex-wrap items-center gap-2 text-slate-300 text-xs md:text-sm mt-1">
+                          <div className="flex flex-wrap items-center gap-1 md:gap-2 text-slate-300 text-xs md:text-sm mt-1">
+                            <span className="flex items-center gap-1 flex-shrink-0">
+                              📅 {formatDateArabic(booking.booking_date)}
+                            </span>
+                            <span className="hidden md:flex items-center gap-1">•</span>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-1 md:gap-2 text-slate-300 text-xs md:text-sm">
                             <span className="flex items-center gap-1 flex-shrink-0">
                               <Phone size={14} />
                               <span className="truncate">{booking.customer_phone}</span>
@@ -213,7 +288,19 @@ export default function QueuePage() {
                               <Clock size={14} />
                               {booking.booking_time}
                             </span>
-                            <span className="truncate">⚡ {barbers[booking.barber_id] || 'N/A'}</span>
+                            <span className="truncate">
+                              ⚡ {barbers[booking.barber_id] 
+                                ? barbers[booking.barber_id] 
+                                : booking.barber_id ? '⚠️ غير موجود' : '❌ بلا حلاق'}
+                            </span>
+                            <span className="truncate">
+                              🛠️ {services[booking.service_id]?.name_ar 
+                                ? services[booking.service_id]?.name_ar 
+                                : booking.service_id ? '⚠️ غير موجودة' : '❌ بلا خدمة'}
+                            </span>
+                            {services[booking.service_id]?.price && (
+                              <span className="truncate">💰 {services[booking.service_id]?.price} ر.س</span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -238,6 +325,8 @@ export default function QueuePage() {
             <p className="text-slate-400 text-2xl mb-4">✅ لا يوجد حجوزات اليوم</p>
             <p className="text-slate-500">استرخ، لا حاجة للعمل الآن!</p>
           </div>
+        )}
+          </>
         )}
       </div>
     </main>

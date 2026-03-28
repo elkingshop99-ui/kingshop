@@ -2,12 +2,20 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { supabase, Barber, Service, Booking } from '@/db/supabase'
 import toast from 'react-hot-toast'
-import { AlertCircle, Clock } from 'lucide-react'
+import { AlertCircle, Clock, CheckCircle2 } from 'lucide-react'
 
 const TIME_SLOTS = [
   '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
   '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
 ]
+
+// Format date to Arabic format
+const formatDateArabic = (dateStr: string) => {
+  const date = new Date(dateStr + 'T00:00:00')
+  const days = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
+  const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+  return `${days[date.getDay()]}، ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`
+}
 
 // Normalize Egyptian phone numbers
 const normalizePhone = (phone: string) => {
@@ -32,7 +40,6 @@ export default function BookingPage() {
   const isArabic = i18n.language === 'ar'
   const [barbers, setBarbers] = useState<Barber[]>([])
   const [services, setServices] = useState<Service[]>([])
-  const [loading, setLoading] = useState(false)
   const [bookedSlots, setBookedSlots] = useState<string[]>([])
   const [existingBooking, setExistingBooking] = useState<Booking | null>(null)
 
@@ -44,6 +51,12 @@ export default function BookingPage() {
   const [customerPhone, setCustomerPhone] = useState('')
   const [customerEmail, setCustomerEmail] = useState('')
   const [notes, setNotes] = useState('')
+  
+  // Confirmation modal state
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const [pendingBooking, setPendingBooking] = useState<any>(null)
+  const [confirmationStep, setConfirmationStep] = useState<'confirm' | 'success'>('confirm')
+  const [isConfirming, setIsConfirming] = useState(false)
 
   useEffect(() => {
     fetchData()
@@ -173,45 +186,87 @@ export default function BookingPage() {
       return
     }
 
-    setLoading(true)
+    // Show confirmation modal instead of submitting directly
+    const normalizedPhone = normalizePhone(customerPhone)
+    
+    const booking = {
+      barber_id: selectedBarber,
+      service_id: selectedService,
+      customer_name: customerName.trim(),
+      customer_phone: normalizedPhone,
+      customer_email: customerEmail?.trim() || null,
+      booking_date: selectedDate,
+      booking_time: selectedTime,
+      status: 'pending',
+      notes: notes?.trim() || null,
+    }
+
+    setPendingBooking(booking)
+    setShowConfirmation(true)
+    setConfirmationStep('confirm')
+  }
+
+  const handleConfirmBooking = async () => {
+    if (!pendingBooking) return
+
+    // Validate that barber and service IDs are valid UUIDs
+    if (!pendingBooking.barber_id || pendingBooking.barber_id.length === 0) {
+      toast.error('❌ اختر حلاق من فضلك')
+      setConfirmationStep('confirm')
+      return
+    }
+
+    if (!pendingBooking.service_id || pendingBooking.service_id.length === 0) {
+      toast.error('❌ اختر خدمة من فضلك')
+      setConfirmationStep('confirm')
+      return
+    }
+
+    // Double check that the barber exists
+    const selectedBarberData = barbers.find(b => b.id === pendingBooking.barber_id)
+    if (!selectedBarberData) {
+      toast.error('❌ الحلاق المختار غير صحيح - اختر حلاق آخر')
+      setConfirmationStep('confirm')
+      return
+    }
+
+    // Double check that the service exists
+    const selectedServiceData = services.find(s => s.id === pendingBooking.service_id)
+    if (!selectedServiceData) {
+      toast.error('❌ الخدمة المختارة غير صحيحة - اختر خدمة أخرى')
+      setConfirmationStep('confirm')
+      return
+    }
+
+    setIsConfirming(true)
     try {
-      const normalizedPhone = normalizePhone(customerPhone)
-
-      // Create booking data WITHOUT id, created_at, updated_at
-      // Supabase will generate these automatically
-      const bookingData = {
-        barber_id: selectedBarber,
-        service_id: selectedService,
-        customer_name: customerName.trim(),
-        customer_phone: normalizedPhone,
-        customer_email: customerEmail?.trim() || null,
-        booking_date: selectedDate,
-        booking_time: selectedTime,
-        status: 'pending',
-        notes: notes?.trim() || null,
-      }
-
-      console.log('Submitting booking:', bookingData)
-
-      const { error } = await supabase.from('bookings').insert([bookingData])
+      const { error } = await supabase.from('bookings').insert([pendingBooking])
 
       if (error) {
         console.error('Supabase error details:', error)
         throw error
       }
 
-      toast.success('✅ تم الحجز بنجاح! سنتواصل معك قريباً')
-
-      // Reset form
-      setSelectedBarber(barbers[0]?.id || '')
-      setSelectedService(services[0]?.id || '')
-      setSelectedDate('')
-      setSelectedTime('')
-      setCustomerName('')
-      setCustomerPhone('')
-      setCustomerEmail('')
-      setNotes('')
-      setExistingBooking(null)
+      // Show success state
+      setConfirmationStep('success')
+      
+      // Auto close after 3 seconds and reset form
+      setTimeout(() => {
+        setShowConfirmation(false)
+        setConfirmationStep('confirm')
+        setPendingBooking(null)
+        
+        // Reset form
+        setSelectedBarber(barbers[0]?.id || '')
+        setSelectedService(services[0]?.id || '')
+        setSelectedDate('')
+        setSelectedTime('')
+        setCustomerName('')
+        setCustomerPhone('')
+        setCustomerEmail('')
+        setNotes('')
+        setExistingBooking(null)
+      }, 3000)
     } catch (err: any) {
       console.error('Booking error full:', err)
       
@@ -220,11 +275,25 @@ export default function BookingPage() {
       } else if (err.code === '22P02') {
         toast.error('❌ صيغة بيانات غير صحيحة - حاول مرة أخرى')
       } else {
-        toast.error('❌ حدث خطأ: ' + (err.message || t('booking.error')))
+        toast.error('❌ حدث خطأ: ' + (err.message || 'حاول مرة أخرى'))
       }
+      
+      setConfirmationStep('confirm')
     } finally {
-      setLoading(false)
+      setIsConfirming(false)
     }
+  }
+
+  const handleEditBooking = () => {
+    setShowConfirmation(false)
+    setPendingBooking(null)
+    setConfirmationStep('confirm')
+  }
+
+  const handleCancelBooking = () => {
+    setShowConfirmation(false)
+    setPendingBooking(null)
+    setConfirmationStep('confirm')
   }
 
   return (
@@ -406,13 +475,152 @@ export default function BookingPage() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={loading || !selectedTime}
+            disabled={!selectedTime}
             className="w-full px-6 py-3 bg-gold-500 hover:bg-gold-600 disabled:bg-gold-700 text-white rounded-lg font-semibold transition-colors"
           >
-            {loading ? 'جاري الحجز...' : t('booking.book')}
+            {t('booking.book')}
           </button>
         </form>
       </div>
+
+      {/* Confirmation Modal */}
+      {showConfirmation && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl max-w-2xl w-full shadow-2xl animate-in fade-in zoom-in-95 duration-300">
+            {confirmationStep === 'confirm' ? (
+              <>
+                {/* Confirmation Header */}
+                <div className="bg-gradient-to-r from-gold-500 to-gold-600 px-8 py-6 text-white rounded-t-xl">
+                  <h2 className="text-3xl font-bold">تأكيد الحجز</h2>
+                  <p className="text-gold-100 mt-1">تأكد من البيانات قبل الحجز</p>
+                </div>
+
+                {/* Booking Details */}
+                <div className="px-8 py-8 space-y-6">
+                  {/* Details Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Customer Name */}
+                    <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600/50">
+                      <p className="text-slate-400 text-sm mb-2">الاسم</p>
+                      <p className="text-white text-lg font-semibold">{pendingBooking?.customer_name}</p>
+                    </div>
+
+                    {/* Phone */}
+                    <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600/50">
+                      <p className="text-slate-400 text-sm mb-2">رقم الهاتف</p>
+                      <p className="text-white text-lg font-semibold">{pendingBooking?.customer_phone}</p>
+                    </div>
+
+                    {/* Barber */}
+                    <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600/50">
+                      <p className="text-slate-400 text-sm mb-2">الحلاق</p>
+                      <p className="text-white text-lg font-semibold">
+                        {barbers.find(b => b.id === pendingBooking?.barber_id)?.name}
+                      </p>
+                    </div>
+
+                    {/* Service */}
+                    <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600/50">
+                      <p className="text-slate-400 text-sm mb-2">الخدمة</p>
+                      <p className="text-white text-lg font-semibold">
+                        {services.find(s => s.id === pendingBooking?.service_id)?.name_ar}
+                      </p>
+                    </div>
+
+                    {/* Date */}
+                    <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600/50">
+                      <p className="text-slate-400 text-sm mb-2">التاريخ</p>
+                      <p className="text-white text-lg font-semibold">{formatDateArabic(pendingBooking?.booking_date || '')}</p>
+                    </div>
+
+                    {/* Time */}
+                    <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600/50">
+                      <p className="text-slate-400 text-sm mb-2">الوقت</p>
+                      <p className="text-white text-lg font-semibold text-center">{pendingBooking?.booking_time}</p>
+                    </div>
+                  </div>
+
+                  {/* Notes if exists */}
+                  {pendingBooking?.notes && (
+                    <div className="bg-blue-500/10 border border-blue-500/50 rounded-lg p-4">
+                      <p className="text-blue-300 text-sm mb-2">ملاحظاتك</p>
+                      <p className="text-blue-100">{pendingBooking.notes}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="px-8 py-6 bg-slate-800/50 border-t border-slate-700 flex gap-4 rounded-b-xl">
+                  {/* Cancel Button - Red */}
+                  <button
+                    onClick={handleCancelBooking}
+                    disabled={isConfirming}
+                    className="flex-1 px-6 py-3 bg-red-500/20 hover:bg-red-500/30 border border-red-500 text-red-300 rounded-lg font-semibold transition-colors disabled:opacity-50"
+                  >
+                    إلغاء
+                  </button>
+
+                  {/* Edit Button - Blue */}
+                  <button
+                    onClick={handleEditBooking}
+                    disabled={isConfirming}
+                    className="flex-1 px-6 py-3 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500 text-blue-300 rounded-lg font-semibold transition-colors disabled:opacity-50"
+                  >
+                    تعديل
+                  </button>
+
+                  {/* Confirm Button - Green */}
+                  <button
+                    onClick={handleConfirmBooking}
+                    disabled={isConfirming}
+                    className="flex-1 px-6 py-3 bg-green-500 hover:bg-green-600 disabled:bg-green-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                  >
+                    {isConfirming ? 'جاري...' : '✓ تأكيد الحجز'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Success State */}
+                <div className="px-8 py-12 flex flex-col items-center justify-center text-center">
+                  {/* Success Icon with Animation */}
+                  <div className="mb-6 relative">
+                    <div className="absolute inset-0 bg-green-500 rounded-full animate-pulse blur-lg"></div>
+                    <CheckCircle2 size={80} className="text-green-400 relative animate-bounce" />
+                  </div>
+
+                  {/* Success Message */}
+                  <h3 className="text-4xl font-bold text-white mb-3">تم التأكيد! 🎉</h3>
+                  <p className="text-xl text-slate-300 mb-2">حجزك تم بنجاح</p>
+                  <p className="text-slate-400">سنتواصل معك على الرقم {pendingBooking?.customer_phone}</p>
+
+                  {/* Booking Summary */}
+                  <div className="mt-8 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-lg p-6 w-full">
+                    <p className="text-green-300 text-sm mb-3 font-semibold">📋 بيانات الحجز</p>
+                    <div className="space-y-2 text-right">
+                      <p className="text-slate-200">
+                        <span className="text-slate-400">الحلاق:</span> {barbers.find(b => b.id === pendingBooking?.barber_id)?.name}
+                      </p>
+                      <p className="text-slate-200">
+                        <span className="text-slate-400">الخدمة:</span> {services.find(s => s.id === pendingBooking?.service_id)?.name_ar}
+                      </p>
+                      <p className="text-slate-200">
+                        <span className="text-slate-400">التاريخ والوقت:</span> {formatDateArabic(pendingBooking?.booking_date || '')} - {pendingBooking?.booking_time}
+                      </p>
+                      <p className="text-slate-200">
+                        <span className="text-slate-400">رقم الهاتف:</span> {pendingBooking?.customer_phone}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Closing text */}
+                  <p className="text-slate-400 mt-8 text-sm">سيتم إغلاق هذه النافذة تلقائياً...</p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   )
 }
