@@ -892,6 +892,16 @@ export default function BookingPage() {
                     </div>
                     <p className="text-slate-400 text-xs mt-4">الرجاء الانتظار</p>
                   </div>
+
+                  {/* Developer Footer Info */}
+                  <div className="mt-8 pt-6 border-t border-slate-700 text-center">
+                    <p className="text-xs text-slate-500">
+                      © تطوير بواسطة <span className="text-slate-400 font-semibold">Youssef & Mohamed</span>
+                    </p>
+                    <p className="text-xs text-slate-600 mt-1">
+                      للتواصل: <span className="text-slate-500 font-mono">01000139417</span>
+                    </p>
+                  </div>
                 </div>
               </>
             )}

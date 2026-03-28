@@ -12,7 +12,7 @@ export default function Footer() {
             {isArabic ? '© تطوير بواسطة' : '© Developed by'} <span className="text-slate-400 font-semibold">Youssef & Mohamed</span>
           </p>
           <p className="text-xs text-slate-600">
-            {isArabic ? 'للتواصل:' : 'Contact:'} <span className="text-slate-500 font-mono">01050123456</span>
+            {isArabic ? 'للتواصل:' : 'Contact:'} <span className="text-slate-500 font-mono">01000139417</span>
           </p>
         </div>
       </div>
