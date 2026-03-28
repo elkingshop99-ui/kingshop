@@ -159,22 +159,21 @@ export default function BookingPage() {
         setLoading(true);
         try {
             const normalizedPhone = normalizePhone(customerPhone);
-            const booking = {
-                id: '',
+            // Create booking data WITHOUT id, created_at, updated_at
+            // Supabase will generate these automatically
+            const bookingData = {
                 barber_id: selectedBarber,
                 service_id: selectedService,
                 customer_name: customerName.trim(),
                 customer_phone: normalizedPhone,
-                customer_email: customerEmail?.trim() || undefined,
+                customer_email: customerEmail?.trim() || null,
                 booking_date: selectedDate,
                 booking_time: selectedTime,
                 status: 'pending',
-                notes: notes?.trim() || undefined,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
+                notes: notes?.trim() || null,
             };
-            console.log('Submitting booking:', booking);
-            const { error } = await supabase.from('bookings').insert([booking]);
+            console.log('Submitting booking:', bookingData);
+            const { error } = await supabase.from('bookings').insert([bookingData]);
             if (error) {
                 console.error('Supabase error details:', error);
                 throw error;
