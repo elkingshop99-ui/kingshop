@@ -187,6 +187,18 @@ export default function BookingPage() {
       const refreshData = async () => {
         console.log(`🔄 Fetching bookings for barber ${selectedBarber} on ${selectedDate}`)
         
+        // Helper function to normalize time format
+        const normalizeTime = (time: any): string => {
+          if (!time) return ''
+          const timeStr = String(time).trim()
+          // Handle both "HH:MM:SS" and "HH:MM" formats
+          const parts = timeStr.split(':')
+          if (parts.length >= 2) {
+            return `${parts[0]}:${parts[1]}` // Return only HH:MM
+          }
+          return timeStr
+        }
+        
         // Get booked slots
         try {
           const { data, error } = await supabase
@@ -197,22 +209,22 @@ export default function BookingPage() {
             .in('status', ['pending', 'confirmed'])
 
           if (!error && data) {
-            // Normalize the times to ensure consistent format (remove seconds if present)
+            // Normalize all times to HH:MM format
             const booked = (data || [])
-              .map((b: any) => {
-                let time = b.booking_time
-                if (typeof time === 'string') {
-                  // Remove seconds if present (e.g., "11:30:00" -> "11:30")
-                  time = time.substring(0, 5)
-                }
-                return time.trim()
-              })
-              .filter((t: any) => t.length > 0)
+              .map((b: any) => normalizeTime(b.booking_time))
+              .filter((t: string) => t.length > 0)
+              // Remove duplicates
+              .filter((t: string, index: number, arr: string[]) => arr.indexOf(t) === index)
             
             setBookedSlots(booked)
             console.log(`✅ Raw booking data:`, data)
             console.log(`✅ Normalized booked slots for ${selectedDate}:`, booked)
-            console.log(`📊 Booked slot count: ${booked.length}`)
+            console.log(`📊 Total booked times: ${booked.length}`)
+            
+            // Debug: Show which slots are booked
+            booked.forEach(slot => {
+              console.log(`  🔴 ${slot} is booked`)
+            })
           } else {
             console.log('❌ Error fetching booked slots:', error)
             setBookedSlots([])
@@ -360,6 +372,15 @@ export default function BookingPage() {
     const barberData = barbers.find(b => b.id === selectedBarber)
     const serviceData = services.find(s => s.id === selectedService)
     
+    // Normalize the selected time to HH:MM format
+    const normalizeTimeHelper = (time: string): string => {
+      const parts = time.split(':')
+      if (parts.length >= 2) {
+        return `${parts[0]}:${parts[1]}` // Return only HH:MM
+      }
+      return time
+    }
+    
     const booking = {
       barber_id: selectedBarber,
       service_id: selectedService,
@@ -371,7 +392,7 @@ export default function BookingPage() {
       customer_phone: normalizedPhone,
       customer_email: customerEmail?.trim() || null,
       booking_date: selectedDate,
-      booking_time: selectedTime,
+      booking_time: normalizeTimeHelper(selectedTime), // Normalize to HH:MM format
       status: 'pending',
       notes: notes?.trim() || null,
     }
@@ -558,19 +579,36 @@ export default function BookingPage() {
 
           {/* Debug: Show current time and booked slots */}
           {selectedDate && (
-            <div className="bg-slate-800/50 border border-slate-700 rounded p-3 mb-4 text-xs space-y-2">
-              <div className="text-slate-300">
+            <div className="bg-slate-800/80 border-2 border-slate-600 rounded p-4 mb-4 text-xs space-y-2 font-mono">
+              <div className="text-slate-300 flex items-center gap-2">
+                <span>🕐</span>
                 <strong>الوقت الحالي:</strong> {getCurrentTimeInEgypt().toLocaleTimeString('ar-EG', { 
                   hour: '2-digit', 
                   minute: '2-digit',
                   timeZone: 'Africa/Cairo'
                 })}
               </div>
-              <div className="text-slate-400">
-                <strong className="text-slate-200">أوقات متاحة:</strong> {availableSlots.length > 0 ? availableSlots.join(', ') : 'بدون أوقات'}
+              <div className="text-slate-400 flex items-start gap-2">
+                <span>✅</span>
+                <div>
+                  <strong className="text-slate-200">أوقات متاحة:</strong> 
+                  <div className="text-slate-300 mt-1">{availableSlots.length > 0 ? availableSlots.join(', ') : 'بدون أوقات'}</div>
+                </div>
               </div>
-              <div className="text-red-400">
-                <strong className="text-red-300">أوقات محجوزة:</strong> {bookedSlots.length > 0 ? bookedSlots.join(', ') : '✅ بدون محجوزات'}
+              <div className="text-red-400 flex items-start gap-2">
+                <span>🔴</span>
+                <div>
+                  <strong className="text-red-300">أوقات محجوزة ({bookedSlots.length}):</strong> 
+                  {bookedSlots.length > 0 ? (
+                    <div className="text-red-300 mt-1 bg-red-950/30 p-2 rounded border border-red-700">
+                      {bookedSlots.map((slot, idx) => (
+                        <div key={idx} className="font-bold">• {slot} ❌</div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-green-300 mt-1">✨ لا توجد محجوزات - جميع الأوقات متاحة!</div>
+                  )}
+                </div>
               </div>
             </div>
           )}

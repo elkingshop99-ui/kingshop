@@ -152,6 +152,18 @@ export default function BookingPage() {
             // Refresh booked slots immediately and in parallel
             const refreshData = async () => {
                 console.log(`🔄 Fetching bookings for barber ${selectedBarber} on ${selectedDate}`);
+                // Helper function to normalize time format
+                const normalizeTime = (time) => {
+                    if (!time)
+                        return '';
+                    const timeStr = String(time).trim();
+                    // Handle both "HH:MM:SS" and "HH:MM" formats
+                    const parts = timeStr.split(':');
+                    if (parts.length >= 2) {
+                        return `${parts[0]}:${parts[1]}`; // Return only HH:MM
+                    }
+                    return timeStr;
+                };
                 // Get booked slots
                 try {
                     const { data, error } = await supabase
@@ -161,21 +173,20 @@ export default function BookingPage() {
                         .eq('booking_date', selectedDate)
                         .in('status', ['pending', 'confirmed']);
                     if (!error && data) {
-                        // Normalize the times to ensure consistent format (remove seconds if present)
+                        // Normalize all times to HH:MM format
                         const booked = (data || [])
-                            .map((b) => {
-                            let time = b.booking_time;
-                            if (typeof time === 'string') {
-                                // Remove seconds if present (e.g., "11:30:00" -> "11:30")
-                                time = time.substring(0, 5);
-                            }
-                            return time.trim();
-                        })
-                            .filter((t) => t.length > 0);
+                            .map((b) => normalizeTime(b.booking_time))
+                            .filter((t) => t.length > 0)
+                            // Remove duplicates
+                            .filter((t, index, arr) => arr.indexOf(t) === index);
                         setBookedSlots(booked);
                         console.log(`✅ Raw booking data:`, data);
                         console.log(`✅ Normalized booked slots for ${selectedDate}:`, booked);
-                        console.log(`📊 Booked slot count: ${booked.length}`);
+                        console.log(`📊 Total booked times: ${booked.length}`);
+                        // Debug: Show which slots are booked
+                        booked.forEach(slot => {
+                            console.log(`  🔴 ${slot} is booked`);
+                        });
                     }
                     else {
                         console.log('❌ Error fetching booked slots:', error);
@@ -309,6 +320,14 @@ export default function BookingPage() {
         // Get barber and service names
         const barberData = barbers.find(b => b.id === selectedBarber);
         const serviceData = services.find(s => s.id === selectedService);
+        // Normalize the selected time to HH:MM format
+        const normalizeTimeHelper = (time) => {
+            const parts = time.split(':');
+            if (parts.length >= 2) {
+                return `${parts[0]}:${parts[1]}`; // Return only HH:MM
+            }
+            return time;
+        };
         const booking = {
             barber_id: selectedBarber,
             service_id: selectedService,
@@ -320,7 +339,7 @@ export default function BookingPage() {
             customer_phone: normalizedPhone,
             customer_email: customerEmail?.trim() || null,
             booking_date: selectedDate,
-            booking_time: selectedTime,
+            booking_time: normalizeTimeHelper(selectedTime), // Normalize to HH:MM format
             status: 'pending',
             notes: notes?.trim() || null,
         };
@@ -434,11 +453,11 @@ export default function BookingPage() {
             }
         }
     };
-    return (_jsxs("main", { className: "min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-12", children: [_jsxs("div", { className: "max-w-4xl mx-auto px-4", children: [_jsxs("div", { className: "text-center mb-12", children: [_jsx("h1", { className: "text-4xl md:text-5xl font-bold text-white mb-2", children: t('booking.title') }), _jsx("p", { className: "text-xl text-slate-300", children: t('booking.subtitle') })] }), _jsxs("form", { onSubmit: handleSubmit, className: "bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-8 space-y-6", children: [_jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-slate-200 mb-2", children: t('booking.selectBarber') }), _jsxs("select", { value: selectedBarber, onChange: (e) => setSelectedBarber(e.target.value), className: "w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-gold-500 transition-colors", dir: isArabic ? 'rtl' : 'ltr', children: [_jsx("option", { value: "", children: t('booking.selectBarber') }), barbers.map((barber) => (_jsx("option", { value: barber.id, children: barber.name }, barber.id)))] })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-slate-200 mb-2", children: t('booking.selectService') }), _jsxs("select", { value: selectedService, onChange: (e) => setSelectedService(e.target.value), className: "w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-gold-500 transition-colors", dir: isArabic ? 'rtl' : 'ltr', children: [_jsx("option", { value: "", children: t('booking.selectService') }), services.map((service) => (_jsxs("option", { value: service.id, children: [service.name_ar, " - ", service.price, " \u062C.\u0645 (", service.duration_minutes, " \u062F\u0642\u064A\u0642\u0629)"] }, service.id)))] })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-slate-200 mb-2", children: t('booking.selectDate') }), _jsx("input", { type: "date", value: selectedDate, onChange: (e) => setSelectedDate(e.target.value), className: "w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-gold-500 transition-colors", min: new Date().toISOString().split('T')[0] })] }), selectedDate && (_jsxs("div", { className: "bg-slate-800/50 border border-slate-700 rounded p-3 mb-4 text-xs space-y-2", children: [_jsxs("div", { className: "text-slate-300", children: [_jsx("strong", { children: "\u0627\u0644\u0648\u0642\u062A \u0627\u0644\u062D\u0627\u0644\u064A:" }), " ", getCurrentTimeInEgypt().toLocaleTimeString('ar-EG', {
+    return (_jsxs("main", { className: "min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-12", children: [_jsxs("div", { className: "max-w-4xl mx-auto px-4", children: [_jsxs("div", { className: "text-center mb-12", children: [_jsx("h1", { className: "text-4xl md:text-5xl font-bold text-white mb-2", children: t('booking.title') }), _jsx("p", { className: "text-xl text-slate-300", children: t('booking.subtitle') })] }), _jsxs("form", { onSubmit: handleSubmit, className: "bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-8 space-y-6", children: [_jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-slate-200 mb-2", children: t('booking.selectBarber') }), _jsxs("select", { value: selectedBarber, onChange: (e) => setSelectedBarber(e.target.value), className: "w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-gold-500 transition-colors", dir: isArabic ? 'rtl' : 'ltr', children: [_jsx("option", { value: "", children: t('booking.selectBarber') }), barbers.map((barber) => (_jsx("option", { value: barber.id, children: barber.name }, barber.id)))] })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-slate-200 mb-2", children: t('booking.selectService') }), _jsxs("select", { value: selectedService, onChange: (e) => setSelectedService(e.target.value), className: "w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-gold-500 transition-colors", dir: isArabic ? 'rtl' : 'ltr', children: [_jsx("option", { value: "", children: t('booking.selectService') }), services.map((service) => (_jsxs("option", { value: service.id, children: [service.name_ar, " - ", service.price, " \u062C.\u0645 (", service.duration_minutes, " \u062F\u0642\u064A\u0642\u0629)"] }, service.id)))] })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-slate-200 mb-2", children: t('booking.selectDate') }), _jsx("input", { type: "date", value: selectedDate, onChange: (e) => setSelectedDate(e.target.value), className: "w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-gold-500 transition-colors", min: new Date().toISOString().split('T')[0] })] }), selectedDate && (_jsxs("div", { className: "bg-slate-800/80 border-2 border-slate-600 rounded p-4 mb-4 text-xs space-y-2 font-mono", children: [_jsxs("div", { className: "text-slate-300 flex items-center gap-2", children: [_jsx("span", { children: "\uD83D\uDD50" }), _jsx("strong", { children: "\u0627\u0644\u0648\u0642\u062A \u0627\u0644\u062D\u0627\u0644\u064A:" }), " ", getCurrentTimeInEgypt().toLocaleTimeString('ar-EG', {
                                                 hour: '2-digit',
                                                 minute: '2-digit',
                                                 timeZone: 'Africa/Cairo'
-                                            })] }), _jsxs("div", { className: "text-slate-400", children: [_jsx("strong", { className: "text-slate-200", children: "\u0623\u0648\u0642\u0627\u062A \u0645\u062A\u0627\u062D\u0629:" }), " ", availableSlots.length > 0 ? availableSlots.join(', ') : 'بدون أوقات'] }), _jsxs("div", { className: "text-red-400", children: [_jsx("strong", { className: "text-red-300", children: "\u0623\u0648\u0642\u0627\u062A \u0645\u062D\u062C\u0648\u0632\u0629:" }), " ", bookedSlots.length > 0 ? bookedSlots.join(', ') : '✅ بدون محجوزات'] })] })), selectedDate && (_jsxs("div", { children: [_jsxs("div", { className: "flex items-center justify-between mb-4", children: [_jsx("label", { className: "block text-sm font-medium text-slate-200", children: t('bookingAdvanced.availableSlots') }), _jsxs("button", { type: "button", onClick: () => {
+                                            })] }), _jsxs("div", { className: "text-slate-400 flex items-start gap-2", children: [_jsx("span", { children: "\u2705" }), _jsxs("div", { children: [_jsx("strong", { className: "text-slate-200", children: "\u0623\u0648\u0642\u0627\u062A \u0645\u062A\u0627\u062D\u0629:" }), _jsx("div", { className: "text-slate-300 mt-1", children: availableSlots.length > 0 ? availableSlots.join(', ') : 'بدون أوقات' })] })] }), _jsxs("div", { className: "text-red-400 flex items-start gap-2", children: [_jsx("span", { children: "\uD83D\uDD34" }), _jsxs("div", { children: [_jsxs("strong", { className: "text-red-300", children: ["\u0623\u0648\u0642\u0627\u062A \u0645\u062D\u062C\u0648\u0632\u0629 (", bookedSlots.length, "):"] }), bookedSlots.length > 0 ? (_jsx("div", { className: "text-red-300 mt-1 bg-red-950/30 p-2 rounded border border-red-700", children: bookedSlots.map((slot, idx) => (_jsxs("div", { className: "font-bold", children: ["\u2022 ", slot, " \u274C"] }, idx))) })) : (_jsx("div", { className: "text-green-300 mt-1", children: "\u2728 \u0644\u0627 \u062A\u0648\u062C\u062F \u0645\u062D\u062C\u0648\u0632\u0627\u062A - \u062C\u0645\u064A\u0639 \u0627\u0644\u0623\u0648\u0642\u0627\u062A \u0645\u062A\u0627\u062D\u0629!" }))] })] })] })), selectedDate && (_jsxs("div", { children: [_jsxs("div", { className: "flex items-center justify-between mb-4", children: [_jsx("label", { className: "block text-sm font-medium text-slate-200", children: t('bookingAdvanced.availableSlots') }), _jsxs("button", { type: "button", onClick: () => {
                                                     const nearest = availableSlots.find(slot => !bookedSlots.includes(slot) && !isPastTime(slot, selectedDate));
                                                     if (!nearest) {
                                                         toast.error('لا توجد مواعيد متاحة اليوم');
