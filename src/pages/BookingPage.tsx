@@ -4,10 +4,41 @@ import { supabase, Barber, Service, Booking } from '@/db/supabase'
 import toast from 'react-hot-toast'
 import { AlertCircle, Clock, CheckCircle2 } from 'lucide-react'
 
-const TIME_SLOTS = [
-  '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-  '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
-]
+// Generate time slots based on interval (in minutes)
+const generateTimeSlots = (interval: number = 30): string[] => {
+  const slots: string[] = []
+  let hours = 9
+  let minutes = 0
+  
+  // Morning slots: 09:00 - 13:00
+  while (hours < 13 || (hours === 13 && minutes === 0)) {
+    slots.push(`${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`)
+    minutes += interval
+    if (minutes >= 60) {
+      hours += 1
+      minutes = 0
+    }
+  }
+  
+  // Afternoon slots: 14:00 - 17:00
+  hours = 14
+  minutes = 0
+  while (hours < 17) {
+    slots.push(`${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`)
+    minutes += interval
+    if (minutes >= 60) {
+      hours += 1
+      minutes = 0
+    }
+  }
+  
+  return slots
+}
+
+// Default 30-minute slots
+const TIME_SLOTS_30 = generateTimeSlots(30)
+const TIME_SLOTS_15 = generateTimeSlots(15)
+const TIME_SLOTS_60 = generateTimeSlots(60)
 
 interface WorkingHours {
   id: string
@@ -101,6 +132,9 @@ export default function BookingPage() {
   const [customerEmail, setCustomerEmail] = useState('')
   const [notes, setNotes] = useState('')
   
+  // Dynamic time slots based on service duration
+  const [currentTimeSlots, setCurrentTimeSlots] = useState<string[]>(TIME_SLOTS_30)
+  
   // Confirmation modal state
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [pendingBooking, setPendingBooking] = useState<any>(null)
@@ -112,7 +146,27 @@ export default function BookingPage() {
     fetchData()
   }, [])
 
-
+  // Update time slots when service duration changes
+  useEffect(() => {
+    if (selectedService) {
+      const service = services.find(s => s.id === selectedService)
+      if (service) {
+        const duration = service.duration_minutes || 30
+        
+        // Choose slots based on duration
+        if (duration <= 15) {
+          setCurrentTimeSlots(TIME_SLOTS_15)
+          console.log(`📅 15-min slots for ${duration}min service`)
+        } else if (duration <= 30) {
+          setCurrentTimeSlots(TIME_SLOTS_30)
+          console.log(`📅 30-min slots for ${duration}min service`)
+        } else {
+          setCurrentTimeSlots(TIME_SLOTS_60)
+          console.log(`📅 60-min slots for ${duration}min service`)
+        }
+      }
+    }
+  }, [selectedService, services])
 
   useEffect(() => {
     if (customerPhone) {
@@ -251,7 +305,7 @@ export default function BookingPage() {
             setWorkingHours([hours])
             
             if (hours.is_working) {
-              const slots = TIME_SLOTS.filter(slot => 
+              const slots = currentTimeSlots.filter(slot => 
                 compareTimeStrings(slot, hours.start_time) >= 0 &&
                 compareTimeStrings(slot, hours.end_time) < 0
               )
@@ -263,12 +317,12 @@ export default function BookingPage() {
             }
           } else {
             setWorkingHours([])
-            setAvailableSlots(TIME_SLOTS)
+            setAvailableSlots(currentTimeSlots)
             console.log('⚠️ No working hours defined, using all slots')
           }
         } catch (err: any) {
           console.error('Error fetching working hours:', err)
-          setAvailableSlots(TIME_SLOTS)
+          setAvailableSlots(currentTimeSlots)
         }
       }
       
@@ -577,42 +631,6 @@ export default function BookingPage() {
             />
           </div>
 
-          {/* Debug: Show current time and booked slots */}
-          {selectedDate && (
-            <div className="bg-slate-800/80 border-2 border-slate-600 rounded p-4 mb-4 text-xs space-y-2 font-mono">
-              <div className="text-slate-300 flex items-center gap-2">
-                <span>🕐</span>
-                <strong>الوقت الحالي:</strong> {getCurrentTimeInEgypt().toLocaleTimeString('ar-EG', { 
-                  hour: '2-digit', 
-                  minute: '2-digit',
-                  timeZone: 'Africa/Cairo'
-                })}
-              </div>
-              <div className="text-slate-400 flex items-start gap-2">
-                <span>✅</span>
-                <div>
-                  <strong className="text-slate-200">أوقات متاحة:</strong> 
-                  <div className="text-slate-300 mt-1">{availableSlots.length > 0 ? availableSlots.join(', ') : 'بدون أوقات'}</div>
-                </div>
-              </div>
-              <div className="text-red-400 flex items-start gap-2">
-                <span>🔴</span>
-                <div>
-                  <strong className="text-red-300">أوقات محجوزة ({bookedSlots.length}):</strong> 
-                  {bookedSlots.length > 0 ? (
-                    <div className="text-red-300 mt-1 bg-red-950/30 p-2 rounded border border-red-700">
-                      {bookedSlots.map((slot, idx) => (
-                        <div key={idx} className="font-bold">• {slot} ❌</div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-green-300 mt-1">✨ لا توجد محجوزات - جميع الأوقات متاحة!</div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Time Slots Grid */}
           {selectedDate && (
             <div>
@@ -645,8 +663,8 @@ export default function BookingPage() {
               )}
 
               <div className="grid grid-cols-4 gap-2 mb-4">
-                {TIME_SLOTS.length > 0 ? (
-                  TIME_SLOTS.map((slot) => {
+                {currentTimeSlots.length > 0 ? (
+                  currentTimeSlots.map((slot) => {
                     const isBooked = bookedSlots.includes(slot)
                     const isPast = isPastTime(slot, selectedDate)
                     const isOutsideWorkingHours = !availableSlots.includes(slot)
@@ -730,11 +748,11 @@ export default function BookingPage() {
                 type="tel"
                 value={customerPhone}
                 onChange={(e) => setCustomerPhone(e.target.value)}
-                placeholder="01000139417 أو 201000139417"
+                placeholder="01050123456 أو 201050123456"
                 className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-gold-500 transition-colors"
                 dir="ltr"
               />
-              <p className="text-xs text-slate-400 mt-1">الصيغ المقبولة: 01000139417 أو 201000139417</p>
+              <p className="text-xs text-slate-400 mt-1">الصيغ المقبولة: 01XXXXXXXXX أو 201XXXXXXXXX</p>
             </div>
           </div>
 
@@ -798,7 +816,8 @@ export default function BookingPage() {
                     {/* Phone */}
                     <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600/50">
                       <p className="text-slate-400 text-sm mb-2">رقم الهاتف</p>
-                      <p className="text-white text-lg font-semibold">{pendingBooking?.customer_phone}</p>
+                      <p className="text-white text-lg font-semibold font-mono">{pendingBooking?.customer_phone}</p>
+                      <p className="text-slate-500 text-xs mt-2">الصيغ المقبولة: 01XXXXXXXXX أو 201XXXXXXXXX</p>
                     </div>
 
                     {/* Barber */}

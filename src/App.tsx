@@ -14,6 +14,7 @@ import WorkingHoursPage from './pages/WorkingHoursPage'
 
 // Components
 import Header from './components/Header'
+import Footer from './components/Footer'
 
 function App() {
   const { i18n } = useTranslation()
@@ -30,16 +31,21 @@ function App() {
   return (
     <>
       <BrowserRouter>
-        <Header isStaff={isStaff} onLogout={() => setIsStaff(false)} />
-        <Routes>
-          <Route path="/" element={<BookingPage />} />
-          <Route path="/login" element={<LoginPage onLoginSuccess={() => setIsStaff(true)} />} />
-          <Route path="/dashboard" element={isStaff ? <DashboardPage /> : <Navigate to="/login" />} />
-          <Route path="/queue" element={isStaff ? <QueuePage /> : <Navigate to="/login" />} />
-          <Route path="/staff-management" element={isStaff ? <StaffManagementPage /> : <Navigate to="/login" />} />
-          <Route path="/admin-settings" element={isStaff ? <AdminSettingsPage /> : <Navigate to="/login" />} />
-          <Route path="/working-hours" element={isStaff ? <WorkingHoursPage /> : <Navigate to="/login" />} />
-        </Routes>
+        <div className="flex flex-col min-h-screen">
+          <Header isStaff={isStaff} onLogout={() => setIsStaff(false)} />
+          <main className="flex-1">
+            <Routes>
+              <Route path="/" element={<BookingPage />} />
+              <Route path="/login" element={<LoginPage onLoginSuccess={() => setIsStaff(true)} />} />
+              <Route path="/dashboard" element={isStaff ? <DashboardPage /> : <Navigate to="/login" />} />
+              <Route path="/queue" element={isStaff ? <QueuePage /> : <Navigate to="/login" />} />
+              <Route path="/staff-management" element={isStaff ? <StaffManagementPage /> : <Navigate to="/login" />} />
+              <Route path="/admin-settings" element={isStaff ? <AdminSettingsPage /> : <Navigate to="/login" />} />
+              <Route path="/working-hours" element={isStaff ? <WorkingHoursPage /> : <Navigate to="/login" />} />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
       </BrowserRouter>
       <Toaster position="top-center" />
     </>
