@@ -74,6 +74,9 @@ export default function Header({ isStaff, onLogout }: HeaderProps) {
                 <Link to="/admin-settings" className={navLinkClass('/admin-settings')}>
                   ⚙️ الإدارة
                 </Link>
+                <Link to="/working-hours" className={navLinkClass('/working-hours')}>
+                  🕒 أوقات العمل
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors font-medium"
@@ -142,6 +145,13 @@ export default function Header({ isStaff, onLogout }: HeaderProps) {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 ⚙️ الإدارة
+              </Link>
+              <Link
+                to="/working-hours"
+                className={`${navLinkClass('/working-hours')} text-center`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                🕒 أوقات العمل
               </Link>
               <button
                 onClick={handleLogout}

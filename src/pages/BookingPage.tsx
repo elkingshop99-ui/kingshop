@@ -9,6 +9,15 @@ const TIME_SLOTS = [
   '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
 ]
 
+interface WorkingHours {
+  id: string
+  barber_id: string
+  day_of_week: number
+  start_time: string
+  end_time: string
+  is_working: boolean
+}
+
 // Format date to Arabic format
 const formatDateArabic = (dateStr: string) => {
   const date = new Date(dateStr + 'T00:00:00')
@@ -35,12 +44,44 @@ const normalizePhone = (phone: string) => {
   return normalized
 }
 
+// Check if booking time is in the past
+const isPastTime = (timeStr: string, dateStr: string): boolean => {
+  const now = new Date()
+  const bookingDate = new Date(dateStr + 'T00:00:00')
+  
+  // If booking date is in the past, it's always past
+  if (bookingDate.toDateString() < now.toDateString()) {
+    return true
+  }
+  
+  // If booking date is today, check if time has passed
+  if (bookingDate.toDateString() === now.toDateString()) {
+    const [hours, minutes] = timeStr.split(':').map(Number)
+    const bookingTime = hours * 60 + minutes
+    const currentTime = now.getHours() * 60 + now.getMinutes()
+    return bookingTime <= currentTime
+  }
+  
+  return false
+}
+
+// Compare two time strings (HH:MM format)
+const compareTimeStrings = (time1: string, time2: string): number => {
+  const [h1, m1] = time1.split(':').map(Number)
+  const [h2, m2] = time2.split(':').map(Number)
+  const t1 = h1 * 60 + m1
+  const t2 = h2 * 60 + m2
+  return t1 - t2
+}
+
 export default function BookingPage() {
   const { t, i18n } = useTranslation()
   const isArabic = i18n.language === 'ar'
   const [barbers, setBarbers] = useState<Barber[]>([])
   const [services, setServices] = useState<Service[]>([])
   const [bookedSlots, setBookedSlots] = useState<string[]>([])
+  const [workingHours, setWorkingHours] = useState<WorkingHours[]>([])
+  const [availableSlots, setAvailableSlots] = useState<string[]>([])
   const [existingBooking, setExistingBooking] = useState<Booking | null>(null)
 
   const [selectedBarber, setSelectedBarber] = useState<string>('')
@@ -65,6 +106,7 @@ export default function BookingPage() {
   useEffect(() => {
     if (selectedBarber && selectedDate) {
       checkBookedSlots()
+      fetchWorkingHoursForBarber()
     }
   }, [selectedBarber, selectedDate])
 
@@ -118,6 +160,46 @@ export default function BookingPage() {
     }
   }
 
+  const fetchWorkingHoursForBarber = async () => {
+    try {
+      const bookingDate = new Date(selectedDate + 'T00:00:00')
+      const dayOfWeek = bookingDate.getDay()
+
+      const { data, error } = await supabase
+        .from('working_hours')
+        .select('*')
+        .eq('barber_id', selectedBarber)
+        .eq('day_of_week', dayOfWeek)
+        .limit(1)
+
+      if (error) throw error
+
+      if (data && data.length > 0) {
+        const hours = data[0] as WorkingHours
+        setWorkingHours([hours])
+        
+        // Calculate available slots based on working hours
+        if (hours.is_working) {
+          const slots = TIME_SLOTS.filter(slot => 
+            compareTimeStrings(slot, hours.start_time) >= 0 &&
+            compareTimeStrings(slot, hours.end_time) < 0
+          )
+          setAvailableSlots(slots)
+        } else {
+          setAvailableSlots([])
+        }
+      } else {
+        // If no working hours defined, use all slots (for backward compatibility)
+        setWorkingHours([])
+        setAvailableSlots(TIME_SLOTS)
+      }
+    } catch (err: any) {
+      console.error('Error fetching working hours:', err)
+      // If error, use all slots as fallback
+      setAvailableSlots(TIME_SLOTS)
+    }
+  }
+
   const checkExistingBooking = async () => {
     try {
       const normalizedPhone = normalizePhone(customerPhone)
@@ -142,15 +224,6 @@ export default function BookingPage() {
     }
   }
 
-  const findNearestAvailableSlot = () => {
-    for (const slot of TIME_SLOTS) {
-      if (!bookedSlots.includes(slot)) {
-        setSelectedTime(slot)
-        return slot
-      }
-    }
-    return null
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -181,9 +254,29 @@ export default function BookingPage() {
       return
     }
 
-    if (bookedSlots.includes(selectedTime)) {
-      toast.error('هذا المعاد محجوز بالفعل')
+    // Check if time is in the past
+    if (isPastTime(selectedTime, selectedDate)) {
+      toast.error('❌ لا يمكن الحجز في وقت مضى - اختر وقت في المستقبل')
       return
+    }
+
+    // Check if time is already booked
+    if (bookedSlots.includes(selectedTime)) {
+      toast.error('❌ هذا المعاد محجوز بالفعل - اختر معاد آخر')
+      return
+    }
+
+    // Check if time is within working hours
+    if (workingHours.length > 0) {
+      const hours = workingHours[0]
+      if (!hours.is_working) {
+        toast.error('❌ الحلاق غير متاح في هذا اليوم')
+        return
+      }
+      if (!availableSlots.includes(selectedTime)) {
+        toast.error('❌ هذا الوقت خارج أوقات عمل الحلاق')
+        return
+      }
     }
 
     // Show confirmation modal instead of submitting directly
@@ -361,10 +454,13 @@ export default function BookingPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    const nearest = findNearestAvailableSlot()
+                    const nearest = availableSlots.find(slot => 
+                      !bookedSlots.includes(slot) && !isPastTime(slot, selectedDate)
+                    )
                     if (!nearest) {
                       toast.error('لا توجد مواعيد متاحة اليوم')
                     } else {
+                      setSelectedTime(nearest)
                       toast.success(`تم اختيار أقرب موعد: ${nearest}`)
                     }
                   }}
@@ -375,30 +471,47 @@ export default function BookingPage() {
                 </button>
               </div>
 
-              <div className="grid grid-cols-4 gap-2 mb-4">
-                {TIME_SLOTS.map((slot) => {
-                  const isBooked = bookedSlots.includes(slot)
-                  const isSelected = selectedTime === slot
+              {availableSlots.length === 0 && workingHours.length > 0 && !workingHours[0]?.is_working && (
+                <div className="bg-red-500/20 border border-red-500 rounded-lg p-4 text-red-300 mb-4">
+                  ⚠️ الحلاق غير متاح في هذا اليوم
+                </div>
+              )}
 
-                  return (
-                    <button
-                      key={slot}
-                      type="button"
-                      onClick={() => !isBooked && setSelectedTime(slot)}
-                      disabled={isBooked}
-                      className={`py-3 px-2 rounded-lg font-semibold text-sm transition-all ${
-                        isBooked
-                          ? 'bg-red-500/30 border border-red-500 text-red-300 cursor-not-allowed opacity-50'
-                          : isSelected
-                          ? 'bg-gold-500 border border-gold-600 text-white shadow-lg'
-                          : 'bg-slate-700 border border-slate-600 text-slate-200 hover:bg-slate-600 hover:border-slate-500'
-                      }`}
-                    >
-                      {slot}
-                      {isBooked && <span className="text-xs block">محجوز</span>}
-                    </button>
-                  )
-                })}
+              <div className="grid grid-cols-4 gap-2 mb-4">
+                {availableSlots.length > 0 ? (
+                  availableSlots.map((slot) => {
+                    const isBooked = bookedSlots.includes(slot)
+                    const isPast = isPastTime(slot, selectedDate)
+                    const isSelected = selectedTime === slot
+                    const isDisabled = isBooked || isPast
+
+                    return (
+                      <button
+                        key={slot}
+                        type="button"
+                        onClick={() => !isDisabled && setSelectedTime(slot)}
+                        disabled={isDisabled}
+                        className={`py-3 px-2 rounded-lg font-semibold text-sm transition-all ${
+                          isBooked
+                            ? 'bg-red-500/30 border border-red-500 text-red-300 cursor-not-allowed opacity-50'
+                            : isPast
+                            ? 'bg-gray-500/30 border border-gray-500 text-gray-300 cursor-not-allowed opacity-50'
+                            : isSelected
+                            ? 'bg-gold-500 border border-gold-600 text-white shadow-lg'
+                            : 'bg-slate-700 border border-slate-600 text-slate-200 hover:bg-slate-600 hover:border-slate-500'
+                        }`}
+                      >
+                        {slot}
+                        {isBooked && <span className="text-xs block">محجوز</span>}
+                        {isPast && <span className="text-xs block">مضى</span>}
+                      </button>
+                    )
+                  })
+                ) : (
+                  <div className="col-span-4 text-center text-slate-400 p-4">
+                    لا توجد مواعيد متاحة
+                  </div>
+                )}
               </div>
 
               <p className="text-xs text-slate-400 text-center">

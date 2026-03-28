@@ -29,12 +29,39 @@ const normalizePhone = (phone) => {
     }
     return normalized;
 };
+// Check if booking time is in the past
+const isPastTime = (timeStr, dateStr) => {
+    const now = new Date();
+    const bookingDate = new Date(dateStr + 'T00:00:00');
+    // If booking date is in the past, it's always past
+    if (bookingDate.toDateString() < now.toDateString()) {
+        return true;
+    }
+    // If booking date is today, check if time has passed
+    if (bookingDate.toDateString() === now.toDateString()) {
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        const bookingTime = hours * 60 + minutes;
+        const currentTime = now.getHours() * 60 + now.getMinutes();
+        return bookingTime <= currentTime;
+    }
+    return false;
+};
+// Compare two time strings (HH:MM format)
+const compareTimeStrings = (time1, time2) => {
+    const [h1, m1] = time1.split(':').map(Number);
+    const [h2, m2] = time2.split(':').map(Number);
+    const t1 = h1 * 60 + m1;
+    const t2 = h2 * 60 + m2;
+    return t1 - t2;
+};
 export default function BookingPage() {
     const { t, i18n } = useTranslation();
     const isArabic = i18n.language === 'ar';
     const [barbers, setBarbers] = useState([]);
     const [services, setServices] = useState([]);
     const [bookedSlots, setBookedSlots] = useState([]);
+    const [workingHours, setWorkingHours] = useState([]);
+    const [availableSlots, setAvailableSlots] = useState([]);
     const [existingBooking, setExistingBooking] = useState(null);
     const [selectedBarber, setSelectedBarber] = useState('');
     const [selectedService, setSelectedService] = useState('');
@@ -55,6 +82,7 @@ export default function BookingPage() {
     useEffect(() => {
         if (selectedBarber && selectedDate) {
             checkBookedSlots();
+            fetchWorkingHoursForBarber();
         }
     }, [selectedBarber, selectedDate]);
     useEffect(() => {
@@ -104,6 +132,43 @@ export default function BookingPage() {
             console.error('Error checking bookings:', err);
         }
     };
+    const fetchWorkingHoursForBarber = async () => {
+        try {
+            const bookingDate = new Date(selectedDate + 'T00:00:00');
+            const dayOfWeek = bookingDate.getDay();
+            const { data, error } = await supabase
+                .from('working_hours')
+                .select('*')
+                .eq('barber_id', selectedBarber)
+                .eq('day_of_week', dayOfWeek)
+                .limit(1);
+            if (error)
+                throw error;
+            if (data && data.length > 0) {
+                const hours = data[0];
+                setWorkingHours([hours]);
+                // Calculate available slots based on working hours
+                if (hours.is_working) {
+                    const slots = TIME_SLOTS.filter(slot => compareTimeStrings(slot, hours.start_time) >= 0 &&
+                        compareTimeStrings(slot, hours.end_time) < 0);
+                    setAvailableSlots(slots);
+                }
+                else {
+                    setAvailableSlots([]);
+                }
+            }
+            else {
+                // If no working hours defined, use all slots (for backward compatibility)
+                setWorkingHours([]);
+                setAvailableSlots(TIME_SLOTS);
+            }
+        }
+        catch (err) {
+            console.error('Error fetching working hours:', err);
+            // If error, use all slots as fallback
+            setAvailableSlots(TIME_SLOTS);
+        }
+    };
     const checkExistingBooking = async () => {
         try {
             const normalizedPhone = normalizePhone(customerPhone);
@@ -126,15 +191,6 @@ export default function BookingPage() {
         catch (err) {
             console.error('Error checking existing booking:', err);
         }
-    };
-    const findNearestAvailableSlot = () => {
-        for (const slot of TIME_SLOTS) {
-            if (!bookedSlots.includes(slot)) {
-                setSelectedTime(slot);
-                return slot;
-            }
-        }
-        return null;
     };
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -163,9 +219,27 @@ export default function BookingPage() {
             toast.error('أدخل رقم الهاتف من فضلك');
             return;
         }
-        if (bookedSlots.includes(selectedTime)) {
-            toast.error('هذا المعاد محجوز بالفعل');
+        // Check if time is in the past
+        if (isPastTime(selectedTime, selectedDate)) {
+            toast.error('❌ لا يمكن الحجز في وقت مضى - اختر وقت في المستقبل');
             return;
+        }
+        // Check if time is already booked
+        if (bookedSlots.includes(selectedTime)) {
+            toast.error('❌ هذا المعاد محجوز بالفعل - اختر معاد آخر');
+            return;
+        }
+        // Check if time is within working hours
+        if (workingHours.length > 0) {
+            const hours = workingHours[0];
+            if (!hours.is_working) {
+                toast.error('❌ الحلاق غير متاح في هذا اليوم');
+                return;
+            }
+            if (!availableSlots.includes(selectedTime)) {
+                toast.error('❌ هذا الوقت خارج أوقات عمل الحلاق');
+                return;
+            }
         }
         // Show confirmation modal instead of submitting directly
         const normalizedPhone = normalizePhone(customerPhone);
@@ -266,20 +340,25 @@ export default function BookingPage() {
         setConfirmationStep('confirm');
     };
     return (_jsxs("main", { className: "min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-12", children: [_jsxs("div", { className: "max-w-4xl mx-auto px-4", children: [_jsxs("div", { className: "text-center mb-12", children: [_jsx("h1", { className: "text-4xl md:text-5xl font-bold text-white mb-2", children: t('booking.title') }), _jsx("p", { className: "text-xl text-slate-300", children: t('booking.subtitle') })] }), _jsxs("form", { onSubmit: handleSubmit, className: "bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-8 space-y-6", children: [_jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-slate-200 mb-2", children: t('booking.selectBarber') }), _jsxs("select", { value: selectedBarber, onChange: (e) => setSelectedBarber(e.target.value), className: "w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-gold-500 transition-colors", dir: isArabic ? 'rtl' : 'ltr', children: [_jsx("option", { value: "", children: t('booking.selectBarber') }), barbers.map((barber) => (_jsx("option", { value: barber.id, children: barber.name }, barber.id)))] })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-slate-200 mb-2", children: t('booking.selectService') }), _jsxs("select", { value: selectedService, onChange: (e) => setSelectedService(e.target.value), className: "w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-gold-500 transition-colors", dir: isArabic ? 'rtl' : 'ltr', children: [_jsx("option", { value: "", children: t('booking.selectService') }), services.map((service) => (_jsxs("option", { value: service.id, children: [service.name_ar, " - ", service.price, " \u062C.\u0645 (", service.duration_minutes, " \u062F\u0642\u064A\u0642\u0629)"] }, service.id)))] })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-slate-200 mb-2", children: t('booking.selectDate') }), _jsx("input", { type: "date", value: selectedDate, onChange: (e) => setSelectedDate(e.target.value), className: "w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-gold-500 transition-colors", min: new Date().toISOString().split('T')[0] })] }), selectedDate && (_jsxs("div", { children: [_jsxs("div", { className: "flex items-center justify-between mb-4", children: [_jsx("label", { className: "block text-sm font-medium text-slate-200", children: t('bookingAdvanced.availableSlots') }), _jsxs("button", { type: "button", onClick: () => {
-                                                    const nearest = findNearestAvailableSlot();
+                                                    const nearest = availableSlots.find(slot => !bookedSlots.includes(slot) && !isPastTime(slot, selectedDate));
                                                     if (!nearest) {
                                                         toast.error('لا توجد مواعيد متاحة اليوم');
                                                     }
                                                     else {
+                                                        setSelectedTime(nearest);
                                                         toast.success(`تم اختيار أقرب موعد: ${nearest}`);
                                                     }
-                                                }, className: "text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded transition-colors flex items-center gap-1", children: [_jsx(Clock, { size: 14 }), t('bookingAdvanced.smartSelection')] })] }), _jsx("div", { className: "grid grid-cols-4 gap-2 mb-4", children: TIME_SLOTS.map((slot) => {
+                                                }, className: "text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded transition-colors flex items-center gap-1", children: [_jsx(Clock, { size: 14 }), t('bookingAdvanced.smartSelection')] })] }), availableSlots.length === 0 && workingHours.length > 0 && !workingHours[0]?.is_working && (_jsx("div", { className: "bg-red-500/20 border border-red-500 rounded-lg p-4 text-red-300 mb-4", children: "\u26A0\uFE0F \u0627\u0644\u062D\u0644\u0627\u0642 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D \u0641\u064A \u0647\u0630\u0627 \u0627\u0644\u064A\u0648\u0645" })), _jsx("div", { className: "grid grid-cols-4 gap-2 mb-4", children: availableSlots.length > 0 ? (availableSlots.map((slot) => {
                                             const isBooked = bookedSlots.includes(slot);
+                                            const isPast = isPastTime(slot, selectedDate);
                                             const isSelected = selectedTime === slot;
-                                            return (_jsxs("button", { type: "button", onClick: () => !isBooked && setSelectedTime(slot), disabled: isBooked, className: `py-3 px-2 rounded-lg font-semibold text-sm transition-all ${isBooked
+                                            const isDisabled = isBooked || isPast;
+                                            return (_jsxs("button", { type: "button", onClick: () => !isDisabled && setSelectedTime(slot), disabled: isDisabled, className: `py-3 px-2 rounded-lg font-semibold text-sm transition-all ${isBooked
                                                     ? 'bg-red-500/30 border border-red-500 text-red-300 cursor-not-allowed opacity-50'
-                                                    : isSelected
-                                                        ? 'bg-gold-500 border border-gold-600 text-white shadow-lg'
-                                                        : 'bg-slate-700 border border-slate-600 text-slate-200 hover:bg-slate-600 hover:border-slate-500'}`, children: [slot, isBooked && _jsx("span", { className: "text-xs block", children: "\u0645\u062D\u062C\u0648\u0632" })] }, slot));
-                                        }) }), _jsx("p", { className: "text-xs text-slate-400 text-center", children: t('bookingAdvanced.selectFromGrid') })] })), existingBooking && (_jsxs("div", { className: "bg-amber-500/20 border border-amber-500 rounded-lg p-4 flex gap-3", children: [_jsx(AlertCircle, { className: "text-amber-500 flex-shrink-0 mt-0.5", size: 20 }), _jsxs("div", { className: "text-amber-100 text-sm", children: [_jsx("p", { className: "font-semibold mb-1", children: t('bookingAdvanced.phoneWarning') }), _jsxs("p", { children: [_jsx("strong", { children: existingBooking.booking_date }), " \u0641\u064A \u0627\u0644\u0633\u0627\u0639\u0629 ", _jsx("strong", { children: existingBooking.booking_time })] }), _jsxs("p", { className: "text-xs text-amber-200 mt-2", children: ["\u0627\u0644\u062D\u062C\u0632 \u0628\u0627\u0633\u0645: ", existingBooking.customer_name] })] })] })), _jsxs("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [_jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-slate-200 mb-2", children: t('booking.yourName') }), _jsx("input", { type: "text", value: customerName, onChange: (e) => setCustomerName(e.target.value), placeholder: t('booking.yourName'), className: "w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-gold-500 transition-colors", dir: isArabic ? 'rtl' : 'ltr' })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-slate-200 mb-2", children: t('booking.yourPhone') }), _jsx("input", { type: "tel", value: customerPhone, onChange: (e) => setCustomerPhone(e.target.value), placeholder: "01000139417 \u0623\u0648 201000139417", className: "w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-gold-500 transition-colors", dir: "ltr" }), _jsx("p", { className: "text-xs text-slate-400 mt-1", children: "\u0627\u0644\u0635\u064A\u063A \u0627\u0644\u0645\u0642\u0628\u0648\u0644\u0629: 01000139417 \u0623\u0648 201000139417" })] })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-slate-200 mb-2", children: t('booking.yourEmail') }), _jsx("input", { type: "email", value: customerEmail, onChange: (e) => setCustomerEmail(e.target.value), placeholder: t('booking.yourEmail'), className: "w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-gold-500 transition-colors" })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-slate-200 mb-2", children: t('booking.notes') }), _jsx("textarea", { value: notes, onChange: (e) => setNotes(e.target.value), placeholder: t('booking.notes'), rows: 3, className: "w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-gold-500 transition-colors resize-none", dir: isArabic ? 'rtl' : 'ltr' })] }), _jsx("button", { type: "submit", disabled: !selectedTime, className: "w-full px-6 py-3 bg-gold-500 hover:bg-gold-600 disabled:bg-gold-700 text-white rounded-lg font-semibold transition-colors", children: t('booking.book') })] })] }), showConfirmation && (_jsx("div", { className: "fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4", children: _jsx("div", { className: "bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl max-w-2xl w-full shadow-2xl animate-in fade-in zoom-in-95 duration-300", children: confirmationStep === 'confirm' ? (_jsxs(_Fragment, { children: [_jsxs("div", { className: "bg-gradient-to-r from-gold-500 to-gold-600 px-8 py-6 text-white rounded-t-xl", children: [_jsx("h2", { className: "text-3xl font-bold", children: "\u062A\u0623\u0643\u064A\u062F \u0627\u0644\u062D\u062C\u0632" }), _jsx("p", { className: "text-gold-100 mt-1", children: "\u062A\u0623\u0643\u062F \u0645\u0646 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0642\u0628\u0644 \u0627\u0644\u062D\u062C\u0632" })] }), _jsxs("div", { className: "px-8 py-8 space-y-6", children: [_jsxs("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [_jsxs("div", { className: "bg-slate-700/50 rounded-lg p-4 border border-slate-600/50", children: [_jsx("p", { className: "text-slate-400 text-sm mb-2", children: "\u0627\u0644\u0627\u0633\u0645" }), _jsx("p", { className: "text-white text-lg font-semibold", children: pendingBooking?.customer_name })] }), _jsxs("div", { className: "bg-slate-700/50 rounded-lg p-4 border border-slate-600/50", children: [_jsx("p", { className: "text-slate-400 text-sm mb-2", children: "\u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062A\u0641" }), _jsx("p", { className: "text-white text-lg font-semibold", children: pendingBooking?.customer_phone })] }), _jsxs("div", { className: "bg-slate-700/50 rounded-lg p-4 border border-slate-600/50", children: [_jsx("p", { className: "text-slate-400 text-sm mb-2", children: "\u0627\u0644\u062D\u0644\u0627\u0642" }), _jsx("p", { className: "text-white text-lg font-semibold", children: barbers.find(b => b.id === pendingBooking?.barber_id)?.name })] }), _jsxs("div", { className: "bg-slate-700/50 rounded-lg p-4 border border-slate-600/50", children: [_jsx("p", { className: "text-slate-400 text-sm mb-2", children: "\u0627\u0644\u062E\u062F\u0645\u0629" }), _jsx("p", { className: "text-white text-lg font-semibold", children: services.find(s => s.id === pendingBooking?.service_id)?.name_ar })] }), _jsxs("div", { className: "bg-slate-700/50 rounded-lg p-4 border border-slate-600/50", children: [_jsx("p", { className: "text-slate-400 text-sm mb-2", children: "\u0627\u0644\u062A\u0627\u0631\u064A\u062E" }), _jsx("p", { className: "text-white text-lg font-semibold", children: formatDateArabic(pendingBooking?.booking_date || '') })] }), _jsxs("div", { className: "bg-slate-700/50 rounded-lg p-4 border border-slate-600/50", children: [_jsx("p", { className: "text-slate-400 text-sm mb-2", children: "\u0627\u0644\u0648\u0642\u062A" }), _jsx("p", { className: "text-white text-lg font-semibold text-center", children: pendingBooking?.booking_time })] })] }), pendingBooking?.notes && (_jsxs("div", { className: "bg-blue-500/10 border border-blue-500/50 rounded-lg p-4", children: [_jsx("p", { className: "text-blue-300 text-sm mb-2", children: "\u0645\u0644\u0627\u062D\u0638\u0627\u062A\u0643" }), _jsx("p", { className: "text-blue-100", children: pendingBooking.notes })] }))] }), _jsxs("div", { className: "px-8 py-6 bg-slate-800/50 border-t border-slate-700 flex gap-4 rounded-b-xl", children: [_jsx("button", { onClick: handleCancelBooking, disabled: isConfirming, className: "flex-1 px-6 py-3 bg-red-500/20 hover:bg-red-500/30 border border-red-500 text-red-300 rounded-lg font-semibold transition-colors disabled:opacity-50", children: "\u0625\u0644\u063A\u0627\u0621" }), _jsx("button", { onClick: handleEditBooking, disabled: isConfirming, className: "flex-1 px-6 py-3 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500 text-blue-300 rounded-lg font-semibold transition-colors disabled:opacity-50", children: "\u062A\u0639\u062F\u064A\u0644" }), _jsx("button", { onClick: handleConfirmBooking, disabled: isConfirming, className: "flex-1 px-6 py-3 bg-green-500 hover:bg-green-600 disabled:bg-green-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2", children: isConfirming ? 'جاري...' : '✓ تأكيد الحجز' })] })] })) : (_jsx(_Fragment, { children: _jsxs("div", { className: "px-8 py-12 flex flex-col items-center justify-center text-center", children: [_jsxs("div", { className: "mb-6 relative", children: [_jsx("div", { className: "absolute inset-0 bg-green-500 rounded-full animate-pulse blur-lg" }), _jsx(CheckCircle2, { size: 80, className: "text-green-400 relative animate-bounce" })] }), _jsx("h3", { className: "text-4xl font-bold text-white mb-3", children: "\u062A\u0645 \u0627\u0644\u062A\u0623\u0643\u064A\u062F! \uD83C\uDF89" }), _jsx("p", { className: "text-xl text-slate-300 mb-2", children: "\u062D\u062C\u0632\u0643 \u062A\u0645 \u0628\u0646\u062C\u0627\u062D" }), _jsxs("p", { className: "text-slate-400", children: ["\u0633\u0646\u062A\u0648\u0627\u0635\u0644 \u0645\u0639\u0643 \u0639\u0644\u0649 \u0627\u0644\u0631\u0642\u0645 ", pendingBooking?.customer_phone] }), _jsxs("div", { className: "mt-8 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-lg p-6 w-full", children: [_jsx("p", { className: "text-green-300 text-sm mb-3 font-semibold", children: "\uD83D\uDCCB \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u062D\u062C\u0632" }), _jsxs("div", { className: "space-y-2 text-right", children: [_jsxs("p", { className: "text-slate-200", children: [_jsx("span", { className: "text-slate-400", children: "\u0627\u0644\u062D\u0644\u0627\u0642:" }), " ", barbers.find(b => b.id === pendingBooking?.barber_id)?.name] }), _jsxs("p", { className: "text-slate-200", children: [_jsx("span", { className: "text-slate-400", children: "\u0627\u0644\u062E\u062F\u0645\u0629:" }), " ", services.find(s => s.id === pendingBooking?.service_id)?.name_ar] }), _jsxs("p", { className: "text-slate-200", children: [_jsx("span", { className: "text-slate-400", children: "\u0627\u0644\u062A\u0627\u0631\u064A\u062E \u0648\u0627\u0644\u0648\u0642\u062A:" }), " ", formatDateArabic(pendingBooking?.booking_date || ''), " - ", pendingBooking?.booking_time] }), _jsxs("p", { className: "text-slate-200", children: [_jsx("span", { className: "text-slate-400", children: "\u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062A\u0641:" }), " ", pendingBooking?.customer_phone] })] })] }), _jsx("p", { className: "text-slate-400 mt-8 text-sm", children: "\u0633\u064A\u062A\u0645 \u0625\u063A\u0644\u0627\u0642 \u0647\u0630\u0647 \u0627\u0644\u0646\u0627\u0641\u0630\u0629 \u062A\u0644\u0642\u0627\u0626\u064A\u0627\u064B..." })] }) })) }) }))] }));
+                                                    : isPast
+                                                        ? 'bg-gray-500/30 border border-gray-500 text-gray-300 cursor-not-allowed opacity-50'
+                                                        : isSelected
+                                                            ? 'bg-gold-500 border border-gold-600 text-white shadow-lg'
+                                                            : 'bg-slate-700 border border-slate-600 text-slate-200 hover:bg-slate-600 hover:border-slate-500'}`, children: [slot, isBooked && _jsx("span", { className: "text-xs block", children: "\u0645\u062D\u062C\u0648\u0632" }), isPast && _jsx("span", { className: "text-xs block", children: "\u0645\u0636\u0649" })] }, slot));
+                                        })) : (_jsx("div", { className: "col-span-4 text-center text-slate-400 p-4", children: "\u0644\u0627 \u062A\u0648\u062C\u062F \u0645\u0648\u0627\u0639\u064A\u062F \u0645\u062A\u0627\u062D\u0629" })) }), _jsx("p", { className: "text-xs text-slate-400 text-center", children: t('bookingAdvanced.selectFromGrid') })] })), existingBooking && (_jsxs("div", { className: "bg-amber-500/20 border border-amber-500 rounded-lg p-4 flex gap-3", children: [_jsx(AlertCircle, { className: "text-amber-500 flex-shrink-0 mt-0.5", size: 20 }), _jsxs("div", { className: "text-amber-100 text-sm", children: [_jsx("p", { className: "font-semibold mb-1", children: t('bookingAdvanced.phoneWarning') }), _jsxs("p", { children: [_jsx("strong", { children: existingBooking.booking_date }), " \u0641\u064A \u0627\u0644\u0633\u0627\u0639\u0629 ", _jsx("strong", { children: existingBooking.booking_time })] }), _jsxs("p", { className: "text-xs text-amber-200 mt-2", children: ["\u0627\u0644\u062D\u062C\u0632 \u0628\u0627\u0633\u0645: ", existingBooking.customer_name] })] })] })), _jsxs("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4", children: [_jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-slate-200 mb-2", children: t('booking.yourName') }), _jsx("input", { type: "text", value: customerName, onChange: (e) => setCustomerName(e.target.value), placeholder: t('booking.yourName'), className: "w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-gold-500 transition-colors", dir: isArabic ? 'rtl' : 'ltr' })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-slate-200 mb-2", children: t('booking.yourPhone') }), _jsx("input", { type: "tel", value: customerPhone, onChange: (e) => setCustomerPhone(e.target.value), placeholder: "01000139417 \u0623\u0648 201000139417", className: "w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-gold-500 transition-colors", dir: "ltr" }), _jsx("p", { className: "text-xs text-slate-400 mt-1", children: "\u0627\u0644\u0635\u064A\u063A \u0627\u0644\u0645\u0642\u0628\u0648\u0644\u0629: 01000139417 \u0623\u0648 201000139417" })] })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-slate-200 mb-2", children: t('booking.yourEmail') }), _jsx("input", { type: "email", value: customerEmail, onChange: (e) => setCustomerEmail(e.target.value), placeholder: t('booking.yourEmail'), className: "w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-gold-500 transition-colors" })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-slate-200 mb-2", children: t('booking.notes') }), _jsx("textarea", { value: notes, onChange: (e) => setNotes(e.target.value), placeholder: t('booking.notes'), rows: 3, className: "w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-gold-500 transition-colors resize-none", dir: isArabic ? 'rtl' : 'ltr' })] }), _jsx("button", { type: "submit", disabled: !selectedTime, className: "w-full px-6 py-3 bg-gold-500 hover:bg-gold-600 disabled:bg-gold-700 text-white rounded-lg font-semibold transition-colors", children: t('booking.book') })] })] }), showConfirmation && (_jsx("div", { className: "fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4", children: _jsx("div", { className: "bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl max-w-2xl w-full shadow-2xl animate-in fade-in zoom-in-95 duration-300", children: confirmationStep === 'confirm' ? (_jsxs(_Fragment, { children: [_jsxs("div", { className: "bg-gradient-to-r from-gold-500 to-gold-600 px-8 py-6 text-white rounded-t-xl", children: [_jsx("h2", { className: "text-3xl font-bold", children: "\u062A\u0623\u0643\u064A\u062F \u0627\u0644\u062D\u062C\u0632" }), _jsx("p", { className: "text-gold-100 mt-1", children: "\u062A\u0623\u0643\u062F \u0645\u0646 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0642\u0628\u0644 \u0627\u0644\u062D\u062C\u0632" })] }), _jsxs("div", { className: "px-8 py-8 space-y-6", children: [_jsxs("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [_jsxs("div", { className: "bg-slate-700/50 rounded-lg p-4 border border-slate-600/50", children: [_jsx("p", { className: "text-slate-400 text-sm mb-2", children: "\u0627\u0644\u0627\u0633\u0645" }), _jsx("p", { className: "text-white text-lg font-semibold", children: pendingBooking?.customer_name })] }), _jsxs("div", { className: "bg-slate-700/50 rounded-lg p-4 border border-slate-600/50", children: [_jsx("p", { className: "text-slate-400 text-sm mb-2", children: "\u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062A\u0641" }), _jsx("p", { className: "text-white text-lg font-semibold", children: pendingBooking?.customer_phone })] }), _jsxs("div", { className: "bg-slate-700/50 rounded-lg p-4 border border-slate-600/50", children: [_jsx("p", { className: "text-slate-400 text-sm mb-2", children: "\u0627\u0644\u062D\u0644\u0627\u0642" }), _jsx("p", { className: "text-white text-lg font-semibold", children: barbers.find(b => b.id === pendingBooking?.barber_id)?.name })] }), _jsxs("div", { className: "bg-slate-700/50 rounded-lg p-4 border border-slate-600/50", children: [_jsx("p", { className: "text-slate-400 text-sm mb-2", children: "\u0627\u0644\u062E\u062F\u0645\u0629" }), _jsx("p", { className: "text-white text-lg font-semibold", children: services.find(s => s.id === pendingBooking?.service_id)?.name_ar })] }), _jsxs("div", { className: "bg-slate-700/50 rounded-lg p-4 border border-slate-600/50", children: [_jsx("p", { className: "text-slate-400 text-sm mb-2", children: "\u0627\u0644\u062A\u0627\u0631\u064A\u062E" }), _jsx("p", { className: "text-white text-lg font-semibold", children: formatDateArabic(pendingBooking?.booking_date || '') })] }), _jsxs("div", { className: "bg-slate-700/50 rounded-lg p-4 border border-slate-600/50", children: [_jsx("p", { className: "text-slate-400 text-sm mb-2", children: "\u0627\u0644\u0648\u0642\u062A" }), _jsx("p", { className: "text-white text-lg font-semibold text-center", children: pendingBooking?.booking_time })] })] }), pendingBooking?.notes && (_jsxs("div", { className: "bg-blue-500/10 border border-blue-500/50 rounded-lg p-4", children: [_jsx("p", { className: "text-blue-300 text-sm mb-2", children: "\u0645\u0644\u0627\u062D\u0638\u0627\u062A\u0643" }), _jsx("p", { className: "text-blue-100", children: pendingBooking.notes })] }))] }), _jsxs("div", { className: "px-8 py-6 bg-slate-800/50 border-t border-slate-700 flex gap-4 rounded-b-xl", children: [_jsx("button", { onClick: handleCancelBooking, disabled: isConfirming, className: "flex-1 px-6 py-3 bg-red-500/20 hover:bg-red-500/30 border border-red-500 text-red-300 rounded-lg font-semibold transition-colors disabled:opacity-50", children: "\u0625\u0644\u063A\u0627\u0621" }), _jsx("button", { onClick: handleEditBooking, disabled: isConfirming, className: "flex-1 px-6 py-3 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500 text-blue-300 rounded-lg font-semibold transition-colors disabled:opacity-50", children: "\u062A\u0639\u062F\u064A\u0644" }), _jsx("button", { onClick: handleConfirmBooking, disabled: isConfirming, className: "flex-1 px-6 py-3 bg-green-500 hover:bg-green-600 disabled:bg-green-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2", children: isConfirming ? 'جاري...' : '✓ تأكيد الحجز' })] })] })) : (_jsx(_Fragment, { children: _jsxs("div", { className: "px-8 py-12 flex flex-col items-center justify-center text-center", children: [_jsxs("div", { className: "mb-6 relative", children: [_jsx("div", { className: "absolute inset-0 bg-green-500 rounded-full animate-pulse blur-lg" }), _jsx(CheckCircle2, { size: 80, className: "text-green-400 relative animate-bounce" })] }), _jsx("h3", { className: "text-4xl font-bold text-white mb-3", children: "\u062A\u0645 \u0627\u0644\u062A\u0623\u0643\u064A\u062F! \uD83C\uDF89" }), _jsx("p", { className: "text-xl text-slate-300 mb-2", children: "\u062D\u062C\u0632\u0643 \u062A\u0645 \u0628\u0646\u062C\u0627\u062D" }), _jsxs("p", { className: "text-slate-400", children: ["\u0633\u0646\u062A\u0648\u0627\u0635\u0644 \u0645\u0639\u0643 \u0639\u0644\u0649 \u0627\u0644\u0631\u0642\u0645 ", pendingBooking?.customer_phone] }), _jsxs("div", { className: "mt-8 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-lg p-6 w-full", children: [_jsx("p", { className: "text-green-300 text-sm mb-3 font-semibold", children: "\uD83D\uDCCB \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u062D\u062C\u0632" }), _jsxs("div", { className: "space-y-2 text-right", children: [_jsxs("p", { className: "text-slate-200", children: [_jsx("span", { className: "text-slate-400", children: "\u0627\u0644\u062D\u0644\u0627\u0642:" }), " ", barbers.find(b => b.id === pendingBooking?.barber_id)?.name] }), _jsxs("p", { className: "text-slate-200", children: [_jsx("span", { className: "text-slate-400", children: "\u0627\u0644\u062E\u062F\u0645\u0629:" }), " ", services.find(s => s.id === pendingBooking?.service_id)?.name_ar] }), _jsxs("p", { className: "text-slate-200", children: [_jsx("span", { className: "text-slate-400", children: "\u0627\u0644\u062A\u0627\u0631\u064A\u062E \u0648\u0627\u0644\u0648\u0642\u062A:" }), " ", formatDateArabic(pendingBooking?.booking_date || ''), " - ", pendingBooking?.booking_time] }), _jsxs("p", { className: "text-slate-200", children: [_jsx("span", { className: "text-slate-400", children: "\u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062A\u0641:" }), " ", pendingBooking?.customer_phone] })] })] }), _jsx("p", { className: "text-slate-400 mt-8 text-sm", children: "\u0633\u064A\u062A\u0645 \u0625\u063A\u0644\u0627\u0642 \u0647\u0630\u0647 \u0627\u0644\u0646\u0627\u0641\u0630\u0629 \u062A\u0644\u0642\u0627\u0626\u064A\u0627\u064B..." })] }) })) }) }))] }));
 }

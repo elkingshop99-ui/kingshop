@@ -10,6 +10,7 @@ import LoginPage from './pages/LoginPage'
 import StaffManagementPage from './pages/StaffManagementPage'
 import AdminSettingsPage from './pages/AdminSettingsPage'
 import QueuePage from './pages/QueuePage'
+import WorkingHoursPage from './pages/WorkingHoursPage'
 
 // Components
 import Header from './components/Header'
@@ -37,6 +38,7 @@ function App() {
           <Route path="/queue" element={isStaff ? <QueuePage /> : <Navigate to="/login" />} />
           <Route path="/staff-management" element={isStaff ? <StaffManagementPage /> : <Navigate to="/login" />} />
           <Route path="/admin-settings" element={isStaff ? <AdminSettingsPage /> : <Navigate to="/login" />} />
+          <Route path="/working-hours" element={isStaff ? <WorkingHoursPage /> : <Navigate to="/login" />} />
         </Routes>
       </BrowserRouter>
       <Toaster position="top-center" />

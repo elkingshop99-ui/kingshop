@@ -10,6 +10,7 @@ import LoginPage from './pages/LoginPage';
 import StaffManagementPage from './pages/StaffManagementPage';
 import AdminSettingsPage from './pages/AdminSettingsPage';
 import QueuePage from './pages/QueuePage';
+import WorkingHoursPage from './pages/WorkingHoursPage';
 // Components
 import Header from './components/Header';
 function App() {
@@ -21,6 +22,6 @@ function App() {
         // Set HTML dir based on language
         document.documentElement.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
     }, [i18n.language]);
-    return (_jsxs(_Fragment, { children: [_jsxs(BrowserRouter, { children: [_jsx(Header, { isStaff: isStaff, onLogout: () => setIsStaff(false) }), _jsxs(Routes, { children: [_jsx(Route, { path: "/", element: _jsx(BookingPage, {}) }), _jsx(Route, { path: "/login", element: _jsx(LoginPage, { onLoginSuccess: () => setIsStaff(true) }) }), _jsx(Route, { path: "/dashboard", element: isStaff ? _jsx(DashboardPage, {}) : _jsx(Navigate, { to: "/login" }) }), _jsx(Route, { path: "/queue", element: isStaff ? _jsx(QueuePage, {}) : _jsx(Navigate, { to: "/login" }) }), _jsx(Route, { path: "/staff-management", element: isStaff ? _jsx(StaffManagementPage, {}) : _jsx(Navigate, { to: "/login" }) }), _jsx(Route, { path: "/admin-settings", element: isStaff ? _jsx(AdminSettingsPage, {}) : _jsx(Navigate, { to: "/login" }) })] })] }), _jsx(Toaster, { position: "top-center" })] }));
+    return (_jsxs(_Fragment, { children: [_jsxs(BrowserRouter, { children: [_jsx(Header, { isStaff: isStaff, onLogout: () => setIsStaff(false) }), _jsxs(Routes, { children: [_jsx(Route, { path: "/", element: _jsx(BookingPage, {}) }), _jsx(Route, { path: "/login", element: _jsx(LoginPage, { onLoginSuccess: () => setIsStaff(true) }) }), _jsx(Route, { path: "/dashboard", element: isStaff ? _jsx(DashboardPage, {}) : _jsx(Navigate, { to: "/login" }) }), _jsx(Route, { path: "/queue", element: isStaff ? _jsx(QueuePage, {}) : _jsx(Navigate, { to: "/login" }) }), _jsx(Route, { path: "/staff-management", element: isStaff ? _jsx(StaffManagementPage, {}) : _jsx(Navigate, { to: "/login" }) }), _jsx(Route, { path: "/admin-settings", element: isStaff ? _jsx(AdminSettingsPage, {}) : _jsx(Navigate, { to: "/login" }) }), _jsx(Route, { path: "/working-hours", element: isStaff ? _jsx(WorkingHoursPage, {}) : _jsx(Navigate, { to: "/login" }) })] })] }), _jsx(Toaster, { position: "top-center" })] }));
 }
 export default App;
