@@ -89,9 +89,16 @@ export default function BookingPage() {
     }, []);
     useEffect(() => {
         if (selectedBarber && selectedDate) {
+            // Refresh booked slots immediately
             checkBookedSlots();
             fetchWorkingHoursForBarber();
+            // Set up interval to refresh every 5 seconds
+            const refreshInterval = setInterval(() => {
+                checkBookedSlots();
+            }, 5000);
+            return () => clearInterval(refreshInterval);
         }
+        return undefined;
     }, [selectedBarber, selectedDate]);
     useEffect(() => {
         if (customerPhone) {
@@ -155,19 +162,25 @@ export default function BookingPage() {
     };
     const checkBookedSlots = async () => {
         try {
+            if (!selectedBarber || !selectedDate) {
+                setBookedSlots([]);
+                return;
+            }
             const { data, error } = await supabase
                 .from('bookings')
-                .select('booking_time, barber_id')
+                .select('booking_time')
                 .eq('barber_id', selectedBarber)
                 .eq('booking_date', selectedDate)
-                .in('status', ['pending', 'confirmed']); // غير 'cancelled' و 'completed'
+                .in('status', ['pending', 'confirmed']);
             if (error)
                 throw error;
             const booked = (data || []).map((b) => b.booking_time);
             setBookedSlots(booked);
+            console.log('✅ Updated booked slots:', booked);
         }
         catch (err) {
-            console.error('Error checking bookings:', err);
+            console.error('❌ Error checking bookings:', err);
+            setBookedSlots([]);
         }
     };
     const fetchWorkingHoursForBarber = async () => {
@@ -333,6 +346,27 @@ export default function BookingPage() {
         }
         setIsConfirming(true);
         try {
+            // FINAL CHECK: Make sure no one else booked this slot in the meantime
+            const { data: conflictCheck, error: conflictError } = await supabase
+                .from('bookings')
+                .select('id')
+                .eq('barber_id', pendingBooking.barber_id)
+                .eq('booking_date', pendingBooking.booking_date)
+                .eq('booking_time', pendingBooking.booking_time)
+                .in('status', ['pending', 'confirmed'])
+                .limit(1);
+            if (conflictError) {
+                console.error('Conflict check error:', conflictError);
+                throw conflictError;
+            }
+            if (conflictCheck && conflictCheck.length > 0) {
+                toast.error('❌ آسف! تم حجز هذا الوقت للتو من قبل عميل آخر. اختر وقت آخر.');
+                setConfirmationStep('confirm');
+                setIsConfirming(false);
+                // Refresh the booked slots
+                await checkBookedSlots();
+                return;
+            }
             // Extract only the fields that exist in the bookings table
             const bookingData = {
                 barber_id: pendingBooking.barber_id,
