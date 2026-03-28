@@ -1,0 +1,24 @@
+import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
+import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
+// Pages
+import BookingPage from './pages/BookingPage';
+import DashboardPage from './pages/DashboardPage';
+import LoginPage from './pages/LoginPage';
+import StaffManagementPage from './pages/StaffManagementPage';
+// Components
+import Header from './components/Header';
+function App() {
+    const { i18n } = useTranslation();
+    const [isStaff, setIsStaff] = useState(false);
+    useEffect(() => {
+        const staffToken = localStorage.getItem('staff_token');
+        setIsStaff(!!staffToken);
+        // Set HTML dir based on language
+        document.documentElement.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
+    }, [i18n.language]);
+    return (_jsxs(_Fragment, { children: [_jsxs(BrowserRouter, { children: [_jsx(Header, { isStaff: isStaff, onLogout: () => setIsStaff(false) }), _jsxs(Routes, { children: [_jsx(Route, { path: "/", element: _jsx(BookingPage, {}) }), _jsx(Route, { path: "/login", element: _jsx(LoginPage, { onLoginSuccess: () => setIsStaff(true) }) }), _jsx(Route, { path: "/dashboard", element: isStaff ? _jsx(DashboardPage, {}) : _jsx(Navigate, { to: "/login" }) }), _jsx(Route, { path: "/staff-management", element: isStaff ? _jsx(StaffManagementPage, {}) : _jsx(Navigate, { to: "/login" }) })] })] }), _jsx(Toaster, { position: "top-center" })] }));
+}
+export default App;

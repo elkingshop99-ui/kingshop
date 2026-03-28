@@ -153,3 +153,10 @@ INSERT INTO shop_settings (key, value) VALUES
   ('min_advance_hours', '1'),
   ('break_time_minutes', '15')
 ON CONFLICT DO NOTHING;
+
+-- Sample Staff Users
+INSERT INTO staff_users (email, password_hash, name, phone, role, is_active) VALUES
+  ('admin@kingshop.com', 'YWRtaW4xMjM=', 'أحمد المدير', '0501234567', 'admin', true),
+  ('barber@kingshop.com', 'YmFyYmVyMTIz', 'محمود الحلاق', '0502345678', 'staff', true),
+  ('staff@kingshop.com', 'c3RhZmYxMjM=', 'علي الموظف', '0503456789', 'staff', true)
+ON CONFLICT DO NOTHING;

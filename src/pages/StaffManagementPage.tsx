@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '@/db/supabase'
 import toast from 'react-hot-toast'
-import { Plus, Trash2, Edit2 } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 
 interface StaffUser {
   id: string
