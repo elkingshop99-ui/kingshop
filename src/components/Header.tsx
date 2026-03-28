@@ -121,9 +121,9 @@ export default function Header({ isStaff, onLogout }: HeaderProps) {
                 <Link
                   to="/login"
                   className="px-3 py-2 rounded-lg bg-gold-500 hover:bg-gold-600 text-white font-semibold transition-colors z-40 relative text-sm flex-shrink-0"
-                  title="تسجيل دخول الموظفين"
+                  title="لوحة التحكم"
                 >
-                  الموظفين
+                  لوحة التحكم
                 </Link>
               )}
             </div>

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { supabase, Barber, Service, Booking } from '@/db/supabase'
 import toast from 'react-hot-toast'
 import { AlertCircle, Clock, CheckCircle2 } from 'lucide-react'
+import { formatTime12Hour, formatTime12HourArabic } from '@/utils/formatTime'
 
 // Fixed time slots - 30 minute intervals
 const TIME_SLOTS = [
@@ -627,6 +628,7 @@ export default function BookingPage() {
                     const isOutsideWorkingHours = !availableSlots.includes(slot)
                     const isSelected = selectedTime === slot
                     const isDisabled = isBooked || isPast || isOutsideWorkingHours
+                    const displayTime = formatTime12Hour(slot)
 
                     return (
                       <button
@@ -652,7 +654,7 @@ export default function BookingPage() {
                           'متاح'
                         }
                       >
-                        {slot}
+                        {displayTime}
                         {isBooked && <span className="text-xs block">محجوز</span>}
                         {isPast && <span className="text-xs block">مضى</span>}
                         {isOutsideWorkingHours && !isBooked && !isPast && <span className="text-xs block opacity-50">مغلق</span>}
@@ -679,7 +681,7 @@ export default function BookingPage() {
               <div className="text-amber-100 text-sm">
                 <p className="font-semibold mb-1">{t('bookingAdvanced.phoneWarning')}</p>
                 <p>
-                  <strong>{existingBooking.booking_date}</strong> في الساعة <strong>{existingBooking.booking_time}</strong>
+                  <strong>{existingBooking.booking_date}</strong> في الساعة <strong>{formatTime12HourArabic(existingBooking.booking_time)}</strong>
                 </p>
                 <p className="text-xs text-amber-200 mt-2">الحجز باسم: {existingBooking.customer_name}</p>
               </div>
@@ -810,7 +812,7 @@ export default function BookingPage() {
                     {/* Time */}
                     <div className="bg-slate-700/50 rounded-lg p-3 md:p-4 border border-slate-600/50">
                       <p className="text-slate-400 text-xs md:text-sm mb-2">الوقت</p>
-                      <p className="text-white text-xl md:text-2xl font-semibold text-center">{pendingBooking?.booking_time}</p>
+                      <p className="text-white text-xl md:text-2xl font-semibold text-center">{formatTime12HourArabic(pendingBooking?.booking_time || '')}</p>
                     </div>
                   </div>
 
@@ -885,7 +887,7 @@ export default function BookingPage() {
                         <span className="text-slate-400">المدة:</span> {pendingBooking?.service_duration} دقيقة
                       </p>
                       <p className="text-slate-200">
-                        <span className="text-slate-400">التاريخ والوقت:</span> {formatDateArabic(pendingBooking?.booking_date || '')} - {pendingBooking?.booking_time}
+                        <span className="text-slate-400">التاريخ والوقت:</span> {formatDateArabic(pendingBooking?.booking_date || '')} - {formatTime12HourArabic(pendingBooking?.booking_time || '')}
                       </p>
                       <p className="text-slate-200">
                         <span className="text-slate-400">رقم الهاتف:</span> {pendingBooking?.customer_phone}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase, Barber } from '@/db/supabase'
 import toast from 'react-hot-toast'
 import { Save, Clock } from 'lucide-react'
+import { formatTime12Hour } from '@/utils/formatTime'
 
 interface WorkingHours {
   id?: string
@@ -219,6 +220,7 @@ export default function WorkingHoursPage() {
                             }
                             className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white focus:outline-none focus:border-gold-500"
                           />
+                          <p className="text-gold-400 text-xs mt-1">{formatTime12Hour(hours.start_time)}</p>
                         </div>
 
                         {/* End Time */}
@@ -232,6 +234,7 @@ export default function WorkingHoursPage() {
                             }
                             className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded text-white focus:outline-none focus:border-gold-500"
                           />
+                          <p className="text-gold-400 text-xs mt-1">{formatTime12Hour(hours.end_time)}</p>
                         </div>
                       </>
                     )}

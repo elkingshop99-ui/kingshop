@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { format } from 'date-fns'
 import { ar } from 'date-fns/locale'
 import { CheckCircle, XCircle } from 'lucide-react'
+import { formatTime12HourArabic } from '@/utils/formatTime'
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation()
@@ -155,7 +156,7 @@ export default function DashboardPage() {
                     <strong className="text-slate-200 block md:inline">الخدمة: </strong><span className="text-white font-semibold">{booking.service?.name_ar || '—'}</span>
                   </p>
                   <p className="text-slate-300 py-2">
-                    <strong className="text-slate-200 block md:inline">الموعد: </strong><span className="text-gold-400 font-semibold">{booking.booking_time?.substring(0, 5) || booking.booking_time}</span>
+                    <strong className="text-slate-200 block md:inline">الموعد: </strong><span className="text-gold-400 font-semibold">{formatTime12HourArabic(booking.booking_time || '')}</span>
                   </p>
                   <p className="text-slate-300 py-2">
                     <strong className="text-slate-200 block md:inline">التاريخ: </strong>
