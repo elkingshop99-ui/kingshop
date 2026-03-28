@@ -1,0 +1,45 @@
+{
+  "header": {
+    "booking": "احجز موعد",
+    "dashboard": "لوحة التحكم",
+    "language": "اللغة"
+  },
+  "booking": {
+    "title": "احجز موعدك الآن",
+    "subtitle": "اختر الخدمة والموعد المناسب",
+    "selectBarber": "اختر الحلاق",
+    "selectService": "اختر الخدمة",
+    "selectDate": "اختر التاريخ",
+    "selectTime": "اختر الوقت",
+    "yourName": "اسمك",
+    "yourPhone": "رقم الهاتف",
+    "yourEmail": "البريد الإلكتروني (اختياري)",
+    "notes": "ملاحظات (اختيارية)",
+    "book": "احجز الآن",
+    "cancel": "إلغاء",
+    "success": "تم الحجز بنجاح! سنتواصل معك قريباً",
+    "error": "حدث خطأ، حاول مرة أخرى"
+  },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "logout": "تسجيل الخروج",
+    "todayBookings": "الحجوزات اليوم",
+    "allBookings": "جميع الحجوزات",
+    "services": "الخدمات",
+    "barbers": "الحلاقيون",
+    "settings": "الإعدادات",
+    "addService": "إضافة خدمة",
+    "addBarber": "إضافة حلاق"
+  },
+  "booking_status": {
+    "pending": "قيد الانتظار",
+    "confirmed": "مؤكد",
+    "completed": "اكتمل",
+    "cancelled": "ملغى"
+  },
+  "validation": {
+    "required": "هذا الحقل مطلوب",
+    "invalidPhone": "رقم هاتف غير صحيح",
+    "invalidEmail": "بريد إلكتروني غير صحيح"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "header": {
+    "booking": "Book Now",
+    "dashboard": "Dashboard",
+    "language": "Language"
+  },
+  "booking": {
+    "title": "Book Your Appointment",
+    "subtitle": "Select service and preferred time",
+    "selectBarber": "Select Barber",
+    "selectService": "Select Service",
+    "selectDate": "Select Date",
+    "selectTime": "Select Time",
+    "yourName": "Your Name",
+    "yourPhone": "Phone Number",
+    "yourEmail": "Email (Optional)",
+    "notes": "Notes (Optional)",
+    "book": "Book Now",
+    "cancel": "Cancel",
+    "success": "Booking successful! We will contact you soon",
+    "error": "An error occurred, please try again"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "logout": "Logout",
+    "todayBookings": "Today's Bookings",
+    "allBookings": "All Bookings",
+    "services": "Services",
+    "barbers": "Barbers",
+    "settings": "Settings",
+    "addService": "Add Service",
+    "addBarber": "Add Barber"
+  },
+  "booking_status": {
+    "pending": "Pending",
+    "confirmed": "Confirmed",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidPhone": "Invalid phone number",
+    "invalidEmail": "Invalid email address"
+  }
+}
