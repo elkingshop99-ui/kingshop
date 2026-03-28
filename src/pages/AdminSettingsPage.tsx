@@ -313,7 +313,7 @@ export default function AdminSettingsPage() {
             services.map((service) => (
               <div key={service.id} className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-colors">
                 <h3 className="text-lg font-bold text-white mb-2">{service.name_ar || service.name_en}</h3>
-                <p className="text-sm text-gold-400 font-semibold mb-1">💵 {service.price} SAR</p>
+                <p className="text-sm text-gold-400 font-semibold mb-1">💵 {service.price} ج.م</p>
                 <p className="text-sm text-slate-400 mb-3">⏱️ {service.duration_minutes} دقيقة</p>
                 <p className="text-xs text-slate-500 mb-4 line-clamp-2">{service.description_ar || 'بدون وصف'}</p>
                 <div className="flex gap-2">

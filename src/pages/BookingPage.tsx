@@ -335,7 +335,7 @@ export default function BookingPage() {
               <option value="">{t('booking.selectService')}</option>
               {services.map((service) => (
                 <option key={service.id} value={service.id}>
-                  {service.name_ar} - {service.price} SAR ({service.duration_minutes} دقيقة)
+                  {service.name_ar} - {service.price} ج.م ({service.duration_minutes} دقيقة)
                 </option>
               ))}
             </select>
