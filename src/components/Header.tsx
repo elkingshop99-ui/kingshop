@@ -45,6 +45,12 @@ export default function Header({ isStaff, onLogout }: HeaderProps) {
           ) : (
             <div className="flex items-center gap-4">
               <Link
+                to="/queue"
+                className="px-4 py-2 rounded-lg bg-gold-500 hover:bg-gold-600 text-white transition-colors font-bold"
+              >
+                🎯 الطابور
+              </Link>
+              <Link
                 to="/dashboard"
                 className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white transition-colors font-medium"
               >

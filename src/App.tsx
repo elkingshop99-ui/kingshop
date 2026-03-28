@@ -9,6 +9,7 @@ import DashboardPage from './pages/DashboardPage'
 import LoginPage from './pages/LoginPage'
 import StaffManagementPage from './pages/StaffManagementPage'
 import AdminSettingsPage from './pages/AdminSettingsPage'
+import QueuePage from './pages/QueuePage'
 
 // Components
 import Header from './components/Header'
@@ -33,6 +34,7 @@ function App() {
           <Route path="/" element={<BookingPage />} />
           <Route path="/login" element={<LoginPage onLoginSuccess={() => setIsStaff(true)} />} />
           <Route path="/dashboard" element={isStaff ? <DashboardPage /> : <Navigate to="/login" />} />
+          <Route path="/queue" element={isStaff ? <QueuePage /> : <Navigate to="/login" />} />
           <Route path="/staff-management" element={isStaff ? <StaffManagementPage /> : <Navigate to="/login" />} />
           <Route path="/admin-settings" element={isStaff ? <AdminSettingsPage /> : <Navigate to="/login" />} />
         </Routes>

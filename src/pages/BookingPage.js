@@ -49,9 +49,12 @@ export default function BookingPage() {
                 throw servicesRes.error;
             setBarbers(barbersRes.data || []);
             setServices(servicesRes.data || []);
-            // Auto-select first barber
+            // Auto-select first barber and first service
             if (barbersRes.data && barbersRes.data.length > 0) {
                 setSelectedBarber(barbersRes.data[0].id);
+            }
+            if (servicesRes.data && servicesRes.data.length > 0) {
+                setSelectedService(servicesRes.data[0].id);
             }
         }
         catch (err) {
@@ -139,7 +142,7 @@ export default function BookingPage() {
             toast.success(t('booking.success'));
             // Reset form
             setSelectedBarber(barbers[0]?.id || '');
-            setSelectedService('');
+            setSelectedService(services[0]?.id || '');
             setSelectedDate('');
             setSelectedTime('');
             setCustomerName('');
