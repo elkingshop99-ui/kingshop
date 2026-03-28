@@ -29,9 +29,16 @@ const normalizePhone = (phone) => {
     }
     return normalized;
 };
+// Get current time in Egypt timezone
+const getCurrentTimeInEgypt = () => {
+    const now = new Date();
+    // Egypt is UTC+2
+    const egyptTime = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Cairo' }));
+    return egyptTime;
+};
 // Check if booking time is in the past
 const isPastTime = (timeStr, dateStr) => {
-    const now = new Date();
+    const now = getCurrentTimeInEgypt();
     const bookingDate = new Date(dateStr + 'T00:00:00');
     // If booking date is in the past, it's always past
     if (bookingDate.toDateString() < now.toDateString()) {
@@ -76,7 +83,7 @@ export default function BookingPage() {
     const [pendingBooking, setPendingBooking] = useState(null);
     const [confirmationStep, setConfirmationStep] = useState('confirm');
     const [isConfirming, setIsConfirming] = useState(false);
-    const [closingCountdown, setClosingCountdown] = useState(3);
+    const [closingCountdown, setClosingCountdown] = useState(30);
     useEffect(() => {
         fetchData();
     }, []);
@@ -96,7 +103,7 @@ export default function BookingPage() {
         if (confirmationStep !== 'success') {
             return;
         }
-        setClosingCountdown(3);
+        setClosingCountdown(30);
         const interval = setInterval(() => {
             setClosingCountdown(prev => {
                 if (prev <= 1) {
@@ -150,10 +157,10 @@ export default function BookingPage() {
         try {
             const { data, error } = await supabase
                 .from('bookings')
-                .select('booking_time')
+                .select('booking_time, barber_id')
                 .eq('barber_id', selectedBarber)
                 .eq('booking_date', selectedDate)
-                .neq('status', 'cancelled');
+                .in('status', ['pending', 'confirmed']); // غير 'cancelled' و 'completed'
             if (error)
                 throw error;
             const booked = (data || []).map((b) => b.booking_time);

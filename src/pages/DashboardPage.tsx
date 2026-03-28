@@ -150,20 +150,22 @@ export default function DashboardPage() {
                   )}
                 </div>
 
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => updateStatus(booking.id, 'confirmed')}
-                    className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                  >
-                    <CheckCircle size={16} /> تأكيد
-                  </button>
-                  <button
-                    onClick={() => updateStatus(booking.id, 'cancelled')}
-                    className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                  >
-                    <XCircle size={16} /> إلغاء
-                  </button>
-                </div>
+                {booking.status === 'pending' && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => updateStatus(booking.id, 'confirmed')}
+                      className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle size={16} /> تأكيد
+                    </button>
+                    <button
+                      onClick={() => updateStatus(booking.id, 'cancelled')}
+                      className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                    >
+                      <XCircle size={16} /> إلغاء
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
