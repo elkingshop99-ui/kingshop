@@ -4,7 +4,7 @@ import { supabase, Booking, Barber, Service } from '@/db/supabase'
 import toast from 'react-hot-toast'
 import { format } from 'date-fns'
 import { ar } from 'date-fns/locale'
-import { CheckCircle, XCircle, Clock } from 'lucide-react'
+import { CheckCircle, XCircle } from 'lucide-react'
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation()
