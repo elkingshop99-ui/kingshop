@@ -89,13 +89,20 @@ export default function BookingPage() {
     }, []);
     useEffect(() => {
         if (selectedBarber && selectedDate) {
-            // Refresh booked slots immediately
-            checkBookedSlots();
-            fetchWorkingHoursForBarber();
-            // Set up interval to refresh every 5 seconds
+            // Refresh booked slots immediately and in parallel
+            const refreshData = async () => {
+                console.log(`🔄 Fetching bookings for barber ${selectedBarber} on ${selectedDate}`);
+                await Promise.all([
+                    checkBookedSlots(),
+                    fetchWorkingHoursForBarber()
+                ]);
+            };
+            refreshData();
+            // Set up interval to refresh every 3 seconds for live updates
             const refreshInterval = setInterval(() => {
+                console.log(`🔄 Auto-refresh bookings...`);
                 checkBookedSlots();
-            }, 5000);
+            }, 3000);
             return () => clearInterval(refreshInterval);
         }
         return undefined;
@@ -172,11 +179,14 @@ export default function BookingPage() {
                 .eq('barber_id', selectedBarber)
                 .eq('booking_date', selectedDate)
                 .in('status', ['pending', 'confirmed']);
-            if (error)
-                throw error;
+            if (error) {
+                console.error('❌ Error checking bookings:', error);
+                setBookedSlots([]);
+                return;
+            }
             const booked = (data || []).map((b) => b.booking_time);
             setBookedSlots(booked);
-            console.log('✅ Updated booked slots:', booked);
+            console.log(`✅ Booked slots for ${selectedDate}:`, booked);
         }
         catch (err) {
             console.error('❌ Error checking bookings:', err);
