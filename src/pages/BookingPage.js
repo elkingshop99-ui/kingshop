@@ -161,10 +161,21 @@ export default function BookingPage() {
                         .eq('booking_date', selectedDate)
                         .in('status', ['pending', 'confirmed']);
                     if (!error && data) {
-                        const booked = (data || []).map((b) => b.booking_time);
+                        // Normalize the times to ensure consistent format (remove seconds if present)
+                        const booked = (data || [])
+                            .map((b) => {
+                            let time = b.booking_time;
+                            if (typeof time === 'string') {
+                                // Remove seconds if present (e.g., "11:30:00" -> "11:30")
+                                time = time.substring(0, 5);
+                            }
+                            return time.trim();
+                        })
+                            .filter((t) => t.length > 0);
                         setBookedSlots(booked);
-                        console.log(`✅ Booked slots for ${selectedDate}:`, booked);
-                        console.log(`📊 Slot count: ${booked.length}`);
+                        console.log(`✅ Raw booking data:`, data);
+                        console.log(`✅ Normalized booked slots for ${selectedDate}:`, booked);
+                        console.log(`📊 Booked slot count: ${booked.length}`);
                     }
                     else {
                         console.log('❌ Error fetching booked slots:', error);
