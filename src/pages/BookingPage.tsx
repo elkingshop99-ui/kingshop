@@ -98,6 +98,7 @@ export default function BookingPage() {
   const [pendingBooking, setPendingBooking] = useState<any>(null)
   const [confirmationStep, setConfirmationStep] = useState<'confirm' | 'success'>('confirm')
   const [isConfirming, setIsConfirming] = useState(false)
+  const [closingCountdown, setClosingCountdown] = useState(3)
 
   useEffect(() => {
     fetchData()
@@ -115,6 +116,41 @@ export default function BookingPage() {
       checkExistingBooking()
     }
   }, [customerPhone, selectedDate])
+
+  // Countdown timer for closing modal after success
+  useEffect(() => {
+    if (confirmationStep !== 'success') {
+      return
+    }
+    
+    setClosingCountdown(3)
+    const interval = setInterval(() => {
+      setClosingCountdown(prev => {
+        if (prev <= 1) {
+          // Auto close
+          setShowConfirmation(false)
+          setConfirmationStep('confirm')
+          setPendingBooking(null)
+          
+          // Reset form
+          setSelectedBarber(barbers[0]?.id || '')
+          setSelectedService(services[0]?.id || '')
+          setSelectedDate('')
+          setSelectedTime('')
+          setCustomerName('')
+          setCustomerPhone('')
+          setCustomerEmail('')
+          setNotes('')
+          setExistingBooking(null)
+          
+          clearInterval(interval)
+        }
+        return Math.max(prev - 1, 0)
+      })
+    }, 1000)
+    
+    return () => clearInterval(interval)
+  }, [confirmationStep, barbers, services])
 
   const fetchData = async () => {
     try {
@@ -282,9 +318,17 @@ export default function BookingPage() {
     // Show confirmation modal instead of submitting directly
     const normalizedPhone = normalizePhone(customerPhone)
     
+    // Get barber and service names
+    const barberData = barbers.find(b => b.id === selectedBarber)
+    const serviceData = services.find(s => s.id === selectedService)
+    
     const booking = {
       barber_id: selectedBarber,
       service_id: selectedService,
+      barber_name: barberData?.name || '',
+      service_name: serviceData?.name_ar || '',
+      service_price: serviceData?.price || 0,
+      service_duration: serviceData?.duration_minutes || 0,
       customer_name: customerName.trim(),
       customer_phone: normalizedPhone,
       customer_email: customerEmail?.trim() || null,
@@ -342,24 +386,6 @@ export default function BookingPage() {
 
       // Show success state
       setConfirmationStep('success')
-      
-      // Auto close after 3 seconds and reset form
-      setTimeout(() => {
-        setShowConfirmation(false)
-        setConfirmationStep('confirm')
-        setPendingBooking(null)
-        
-        // Reset form
-        setSelectedBarber(barbers[0]?.id || '')
-        setSelectedService(services[0]?.id || '')
-        setSelectedDate('')
-        setSelectedTime('')
-        setCustomerName('')
-        setCustomerPhone('')
-        setCustomerEmail('')
-        setNotes('')
-        setExistingBooking(null)
-      }, 3000)
     } catch (err: any) {
       console.error('Booking error full:', err)
       
@@ -387,6 +413,16 @@ export default function BookingPage() {
     setShowConfirmation(false)
     setPendingBooking(null)
     setConfirmationStep('confirm')
+  }
+
+  const handleBackdropClick = (e: React.MouseEvent): void => {
+    // Don't close if clicking the modal itself
+    if (e.target === e.currentTarget) {
+      // Don't close during confirmation or success
+      if (!isConfirming && confirmationStep !== 'success') {
+        handleEditBooking()
+      }
+    }
   }
 
   return (
@@ -598,7 +634,7 @@ export default function BookingPage() {
 
       {/* Confirmation Modal */}
       {showConfirmation && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={handleBackdropClick}>
           <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl max-w-2xl w-full shadow-2xl animate-in fade-in zoom-in-95 duration-300">
             {confirmationStep === 'confirm' ? (
               <>
@@ -628,16 +664,24 @@ export default function BookingPage() {
                     <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600/50">
                       <p className="text-slate-400 text-sm mb-2">الحلاق</p>
                       <p className="text-white text-lg font-semibold">
-                        {barbers.find(b => b.id === pendingBooking?.barber_id)?.name}
+                        {pendingBooking?.barber_name || 'جاري التحميل...'}
                       </p>
                     </div>
 
                     {/* Service */}
                     <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600/50">
                       <p className="text-slate-400 text-sm mb-2">الخدمة</p>
-                      <p className="text-white text-lg font-semibold">
-                        {services.find(s => s.id === pendingBooking?.service_id)?.name_ar}
-                      </p>
+                      <div>
+                        <p className="text-white text-lg font-semibold">
+                          {pendingBooking?.service_name || 'جاري التحميل...'}
+                        </p>
+                        <p className="text-slate-300 text-xs mt-1">
+                          ⏱️ {pendingBooking?.service_duration} دقيقة
+                        </p>
+                        <p className="text-gold-400 text-sm mt-1 font-semibold">
+                          {pendingBooking?.service_price} ج.م
+                        </p>
+                      </div>
                     </div>
 
                     {/* Date */}
@@ -712,10 +756,16 @@ export default function BookingPage() {
                     <p className="text-green-300 text-sm mb-3 font-semibold">📋 بيانات الحجز</p>
                     <div className="space-y-2 text-right">
                       <p className="text-slate-200">
-                        <span className="text-slate-400">الحلاق:</span> {barbers.find(b => b.id === pendingBooking?.barber_id)?.name}
+                        <span className="text-slate-400">الحلاق:</span> {pendingBooking?.barber_name}
                       </p>
                       <p className="text-slate-200">
-                        <span className="text-slate-400">الخدمة:</span> {services.find(s => s.id === pendingBooking?.service_id)?.name_ar}
+                        <span className="text-slate-400">الخدمة:</span> {pendingBooking?.service_name}
+                      </p>
+                      <p className="text-slate-200">
+                        <span className="text-slate-400">السعر:</span> <span className="text-gold-400 font-semibold">{pendingBooking?.service_price} ج.م</span>
+                      </p>
+                      <p className="text-slate-200">
+                        <span className="text-slate-400">المدة:</span> {pendingBooking?.service_duration} دقيقة
                       </p>
                       <p className="text-slate-200">
                         <span className="text-slate-400">التاريخ والوقت:</span> {formatDateArabic(pendingBooking?.booking_date || '')} - {pendingBooking?.booking_time}
@@ -727,7 +777,15 @@ export default function BookingPage() {
                   </div>
 
                   {/* Closing text */}
-                  <p className="text-slate-400 mt-8 text-sm">سيتم إغلاق هذه النافذة تلقائياً...</p>
+                  <div className="mt-8 text-center">
+                    <p className="text-slate-300 text-sm mb-4">
+                      ✅ سيتم إغلاق هذه النافذة تلقائياً خلال...
+                    </p>
+                    <div className="inline-block bg-gold-500/20 border-2 border-gold-500 rounded-full px-6 py-3">
+                      <p className="text-gold-400 text-3xl font-bold">{closingCountdown}</p>
+                    </div>
+                    <p className="text-slate-400 text-xs mt-4">الرجاء الانتظار</p>
+                  </div>
                 </div>
               </>
             )}
