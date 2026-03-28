@@ -326,7 +326,19 @@ export default function BookingPage() {
         }
         setIsConfirming(true);
         try {
-            const { error } = await supabase.from('bookings').insert([pendingBooking]);
+            // Extract only the fields that exist in the bookings table
+            const bookingData = {
+                barber_id: pendingBooking.barber_id,
+                service_id: pendingBooking.service_id,
+                customer_name: pendingBooking.customer_name,
+                customer_phone: pendingBooking.customer_phone,
+                customer_email: pendingBooking.customer_email,
+                booking_date: pendingBooking.booking_date,
+                booking_time: pendingBooking.booking_time,
+                status: pendingBooking.status,
+                notes: pendingBooking.notes,
+            };
+            const { error } = await supabase.from('bookings').insert([bookingData]);
             if (error) {
                 console.error('Supabase error details:', error);
                 throw error;
