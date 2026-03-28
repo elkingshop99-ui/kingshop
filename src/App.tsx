@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 
 // Pages
 import BookingPage from './pages/BookingPage'
@@ -42,6 +43,7 @@ function App() {
         </Routes>
       </BrowserRouter>
       <Toaster position="top-center" />
+      <SpeedInsights />
     </>
   )
 }
