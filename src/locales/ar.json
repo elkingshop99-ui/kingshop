@@ -41,5 +41,37 @@
     "required": "هذا الحقل مطلوب",
     "invalidPhone": "رقم هاتف غير صحيح",
     "invalidEmail": "بريد إلكتروني غير صحيح"
+  },
+  "admin": {
+    "settings": "إعدادات المحل",
+    "barbers": "الحلاقون",
+    "services": "الخدمات",
+    "workingHours": "مواعيد العمل",
+    "addBarber": "إضافة حلاق",
+    "addService": "إضافة خدمة",
+    "editBarber": "تعديل حلاق",
+    "editService": "تعديل خدمة",
+    "deleteConfirm": "هل أنت متأكد من الحذف؟",
+    "barberName": "اسم الحلاق",
+    "barberPhone": "هاتف الحلاق",
+    "barberEmail": "بريد الحلاق",
+    "serviceName": "اسم الخدمة",
+    "servicePrice": "السعر",
+    "serviceDuration": "المدة (دقائق)",
+    "save": "حفظ",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "active": "نشط",
+    "inactive": "غير نشط"
+  },
+  "bookingAdvanced": {
+    "availableSlots": "المواعيد المتاحة",
+    "booked": "محجوز",
+    "available": "متاح",
+    "phoneWarning": "⚠️ هذا الرقم محجوز بالفعل في",
+    "previousBooking": "الحجز السابق",
+    "smartSelection": "اختيار تلقائي للموعد الأقرب",
+    "selectFromGrid": "اختر من الجدول أعلاه",
+    "viewBooking": "عرض التفاصيل"
   }
 }

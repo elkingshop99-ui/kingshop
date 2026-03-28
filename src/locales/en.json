@@ -41,5 +41,37 @@
     "required": "This field is required",
     "invalidPhone": "Invalid phone number",
     "invalidEmail": "Invalid email address"
+  },
+  "admin": {
+    "settings": "Shop Settings",
+    "barbers": "Barbers",
+    "services": "Services",
+    "workingHours": "Working Hours",
+    "addBarber": "Add Barber",
+    "addService": "Add Service",
+    "editBarber": "Edit Barber",
+    "editService": "Edit Service",
+    "deleteConfirm": "Are you sure?",
+    "barberName": "Barber Name",
+    "barberPhone": "Barber Phone",
+    "barberEmail": "Barber Email",
+    "serviceName": "Service Name",
+    "servicePrice": "Price",
+    "serviceDuration": "Duration (minutes)",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "bookingAdvanced": {
+    "availableSlots": "Available Time Slots",
+    "booked": "Booked",
+    "available": "Available",
+    "phoneWarning": "⚠️ This phone number already has a booking at",
+    "previousBooking": "Previous Booking",
+    "smartSelection": "Auto-select nearest available time",
+    "selectFromGrid": "Select from grid above",
+    "viewBooking": "View Details"
   }
 }
