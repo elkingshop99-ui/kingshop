@@ -7,17 +7,36 @@ export default function QueuePage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [barbers, setBarbers] = useState<{ [key: string]: string }>({})
   const [loading, setLoading] = useState(true)
-  const [refreshTime, setRefreshTime] = useState(25)
+  const [refreshTime, setRefreshTime] = useState(14)
 
   useEffect(() => {
     fetchData()
-    const interval = setInterval(fetchData, 30000) // Refresh every 30 seconds
-    return () => clearInterval(interval)
+    
+    // Fetch every 14 seconds
+    const interval = setInterval(fetchData, 14000)
+    
+    // Subscribe to real-time changes
+    const subscription = supabase
+      .channel('bookings-channel')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'bookings'
+      }, () => {
+        console.log('Real-time update detected')
+        fetchData()
+      })
+      .subscribe()
+    
+    return () => {
+      clearInterval(interval)
+      subscription.unsubscribe()
+    }
   }, [])
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setRefreshTime((prev) => (prev === 0 ? 25 : prev - 1))
+      setRefreshTime((prev) => (prev === 0 ? 14 : prev - 1))
     }, 1000)
     return () => clearInterval(interval)
   }, [])
@@ -99,73 +118,73 @@ export default function QueuePage() {
   const nextBookings = bookings.slice(1)
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-8">
-      <div className="max-w-6xl mx-auto px-4">
+    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-4 md:py-8">
+      <div className="max-w-6xl mx-auto px-3 md:px-4">
         {/* Top Info */}
-        <div className="flex items-center justify-between mb-12">
-          <h1 className="text-3xl md:text-4xl font-bold text-white">🎯 الطابور</h1>
-          <div className="flex items-center gap-2 text-slate-400">
-            <Clock size={20} />
+        <div className="flex items-center justify-between mb-8 md:mb-12 flex-col md:flex-row gap-3">
+          <h1 className="text-2xl md:text-4xl font-bold text-white">🎯 الطابور</h1>
+          <div className="flex items-center gap-2 text-slate-400 text-sm md:text-base">
+            <Clock size={18} />
             <span>التحديث بعد {refreshTime}ث</span>
           </div>
         </div>
 
         {loading ? (
-          <div className="text-center text-slate-400 text-xl">جاري التحميل...</div>
+          <div className="text-center text-slate-400 text-lg">جاري التحميل...</div>
         ) : currentBooking ? (
           <>
             {/* Current Customer - Big Hero */}
-            <div className="bg-gradient-to-br from-gold-500 to-gold-600 rounded-2xl p-12 mb-12 shadow-2xl border-2 border-gold-400">
+            <div className="bg-gradient-to-br from-gold-500 to-gold-600 rounded-xl md:rounded-2xl p-6 md:p-12 mb-8 md:mb-12 shadow-2xl border-2 border-gold-400">
               <div className="text-center">
-                <p className="text-gold-100 text-lg mb-4">العميل الحالي</p>
-                <h2 className="text-white text-6xl font-bold mb-6">{currentBooking.customer_name}</h2>
+                <p className="text-gold-100 text-sm md:text-lg mb-3">العميل الحالي</p>
+                <h2 className="text-white text-4xl md:text-6xl font-bold mb-6 break-words">{currentBooking.customer_name}</h2>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-                  <div className="bg-white/20 rounded-lg p-4">
-                    <p className="text-gold-100 text-sm mb-1">الهاتف</p>
-                    <div className="flex items-center justify-center gap-2 text-white fonts-semibold text-lg">
-                      <Phone size={20} />
-                      {currentBooking.customer_phone}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
+                  <div className="bg-white/20 rounded-lg p-2 md:p-4">
+                    <p className="text-gold-100 text-xs md:text-sm mb-1">الهاتف</p>
+                    <div className="flex items-center justify-center gap-1 md:gap-2 text-white font-semibold text-xs md:text-lg">
+                      <Phone size={16} className="hidden md:block" />
+                      <span className="text-xs md:text-base">{currentBooking.customer_phone}</span>
                     </div>
                   </div>
 
-                  <div className="bg-white/20 rounded-lg p-4">
-                    <p className="text-gold-100 text-sm mb-1">الوقت</p>
-                    <p className="text-white font-semibold text-lg">{currentBooking.booking_time}</p>
+                  <div className="bg-white/20 rounded-lg p-2 md:p-4">
+                    <p className="text-gold-100 text-xs md:text-sm mb-1">الوقت</p>
+                    <p className="text-white font-semibold text-xs md:text-lg">{currentBooking.booking_time}</p>
                   </div>
 
-                  <div className="bg-white/20 rounded-lg p-4">
-                    <p className="text-gold-100 text-sm mb-1">الحلاق</p>
-                    <p className="text-white font-semibold text-lg">{barbers[currentBooking.barber_id] || 'N/A'}</p>
+                  <div className="bg-white/20 rounded-lg p-2 md:p-4">
+                    <p className="text-gold-100 text-xs md:text-sm mb-1">الحلاق</p>
+                    <p className="text-white font-semibold text-xs md:text-lg truncate">{barbers[currentBooking.barber_id] || 'N/A'}</p>
                   </div>
 
-                  <div className="bg-white/20 rounded-lg p-4">
-                    <p className="text-gold-100 text-sm mb-1">الحالة</p>
-                    <p className="text-white font-semibold text-lg">🔔 قيد الخدمة</p>
+                  <div className="bg-white/20 rounded-lg p-2 md:p-4">
+                    <p className="text-gold-100 text-xs md:text-sm mb-1">الحالة</p>
+                    <p className="text-white font-semibold text-xs md:text-lg">🔔 جاري</p>
                   </div>
                 </div>
 
                 {currentBooking.notes && (
-                  <div className="bg-white/10 rounded-lg p-4 mb-8">
-                    <p className="text-gold-100 text-sm mb-2">ملاحظات:</p>
-                    <p className="text-white text-lg">{currentBooking.notes}</p>
+                  <div className="bg-white/10 rounded-lg p-3 md:p-4 mb-6 md:mb-8">
+                    <p className="text-gold-100 text-xs md:text-sm mb-2">ملاحظات:</p>
+                    <p className="text-white text-xs md:text-lg">{currentBooking.notes}</p>
                   </div>
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex gap-4 justify-center">
+                <div className="flex gap-2 md:gap-4 justify-center flex-col md:flex-row">
                   <button
                     onClick={() => handleComplete(currentBooking.id)}
-                    className="flex items-center gap-2 px-8 py-4 bg-green-500 hover:bg-green-600 text-white rounded-lg font-bold text-lg transition-colors shadow-lg"
+                    className="flex items-center justify-center gap-2 px-4 md:px-8 py-2 md:py-4 bg-green-500 hover:bg-green-600 text-white rounded-lg font-bold text-xs md:text-lg transition-colors shadow-lg"
                   >
-                    <Check size={24} />
+                    <Check size={20} />
                     اكتمل ✓
                   </button>
                   <button
                     onClick={() => handleCancel(currentBooking.id)}
-                    className="flex items-center gap-2 px-8 py-4 bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold text-lg transition-colors shadow-lg"
+                    className="flex items-center justify-center gap-2 px-4 md:px-8 py-2 md:py-4 bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold text-xs md:text-lg transition-colors shadow-lg"
                   >
-                    <X size={24} />
+                    <X size={20} />
                     ملغي ✗
                   </button>
                 </div>
@@ -174,32 +193,32 @@ export default function QueuePage() {
 
             {/* Next Customers List */}
             {nextBookings.length > 0 && (
-              <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-                <h3 className="text-2xl font-bold text-white mb-6">📋 الانتظار</h3>
+              <div className="bg-slate-800/50 border border-slate-700 rounded-lg md:rounded-xl p-4 md:p-6">
+                <h3 className="text-lg md:text-2xl font-bold text-white mb-4 md:mb-6">📋 الانتظار</h3>
 
-                <div className="space-y-3">
+                <div className="space-y-2 md:space-y-3">
                   {nextBookings.map((booking, index) => (
-                    <div key={booking.id} className="flex items-center justify-between p-4 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors border border-slate-600">
-                      <div className="flex items-center gap-4 flex-1">
-                        <div className="text-3xl font-bold text-gold-500 w-12 text-center">{index + 2}</div>
+                    <div key={booking.id} className="flex items-start md:items-center justify-between p-3 md:p-4 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors border border-slate-600 flex-col md:flex-row gap-2">
+                      <div className="flex items-start gap-2 md:gap-4 flex-1 w-full">
+                        <div className="text-xl md:text-3xl font-bold text-gold-500 w-8 md:w-12 text-center flex-shrink-0">{index + 2}</div>
 
-                        <div className="flex-1">
-                          <p className="text-white font-semibold text-lg">{booking.customer_name}</p>
-                          <div className="flex items-center gap-4 text-slate-300 text-sm mt-1">
-                            <span className="flex items-center gap-1">
-                              <Phone size={16} />
-                              {booking.customer_phone}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-semibold text-sm md:text-lg truncate">{booking.customer_name}</p>
+                          <div className="flex flex-wrap items-center gap-2 text-slate-300 text-xs md:text-sm mt-1">
+                            <span className="flex items-center gap-1 flex-shrink-0">
+                              <Phone size={14} />
+                              <span className="truncate">{booking.customer_phone}</span>
                             </span>
-                            <span className="flex items-center gap-1">
-                              <Clock size={16} />
+                            <span className="flex items-center gap-1 flex-shrink-0">
+                              <Clock size={14} />
                               {booking.booking_time}
                             </span>
-                            <span>الحلاق: {barbers[booking.barber_id] || 'N/A'}</span>
+                            <span className="truncate">⚡ {barbers[booking.barber_id] || 'N/A'}</span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="text-slate-400 text-sm">
+                      <div className="text-slate-400 text-xs md:text-sm hidden md:block flex-shrink-0">
                         {booking.booking_date}
                       </div>
                     </div>
