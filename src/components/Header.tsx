@@ -104,7 +104,7 @@ export default function Header({ isStaff, onLogout }: HeaderProps) {
                 {i18n.language === 'ar' ? 'EN' : 'AR'}
               </button>
 
-              {/* Menu button - Always visible when staff is logged in */}
+              {/* Menu button - Visible when staff is logged in */}
               {isStaff && (
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -115,10 +115,21 @@ export default function Header({ isStaff, onLogout }: HeaderProps) {
                   {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
                 </button>
               )}
+
+              {/* Login button - Visible when NOT logged in */}
+              {!isStaff && (
+                <Link
+                  to="/login"
+                  className="px-3 py-2 rounded-lg bg-gold-500 hover:bg-gold-600 text-white font-semibold transition-colors z-40 relative text-sm flex-shrink-0"
+                  title="تسجيل دخول الموظفين"
+                >
+                  الموظفين
+                </Link>
+              )}
             </div>
           </div>
 
-          {/* Mobile Menu */}
+          {/* Mobile Menu - Visible when staff is logged in */}
           {isStaff && mobileMenuOpen && (
             <nav className="mt-3 flex flex-col gap-2 bg-slate-800/50 p-3 rounded-lg border border-slate-700 animate-in fade-in slide-in-from-top-2 z-30 relative">
               <Link
