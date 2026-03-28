@@ -23,8 +23,8 @@ export default function DashboardPage() {
         .from('bookings')
         .select(`
           *,
-          barbers:barber_id (id, name, phone, email),
-          services:service_id (id, name_ar, name_en, price, duration_minutes)
+          barbers!barber_id(id, name, phone, email),
+          services!service_id(id, name_ar, name_en, price, duration_minutes)
         `)
         .order('booking_date', { ascending: false })
 
@@ -35,17 +35,37 @@ export default function DashboardPage() {
 
       const { data, error } = await query
 
-      if (error) throw error
+      if (error) {
+        console.error('Fetch error:', error)
+        throw error
+      }
+
+      console.log('✅ Raw booking data:', data)
 
       setBookings(
-        (data || []).map((b: any) => ({
-          ...b,
-          barber: b.barbers ? b.barbers[0] : undefined,
-          service: b.services ? b.services[0] : undefined,
-        }))
+        (data || []).map((b: any) => {
+          // Handle both array form (barbers[0]) and object form
+          const barberData = Array.isArray(b.barbers) ? b.barbers[0] : b.barbers
+          const serviceData = Array.isArray(b.services) ? b.services[0] : b.services
+          
+          console.log(`📦 Booking ${b.id}:`, {
+            barber_id: b.barber_id,
+            barbers: b.barbers,
+            barberData,
+            service_id: b.service_id,
+            services: b.services,
+            serviceData,
+          })
+          
+          return {
+            ...b,
+            barber: barberData,
+            service: serviceData,
+          }
+        })
       )
     } catch (err: any) {
-      console.error(err)
+      console.error('Error fetching bookings:', err)
       toast.error('خطأ في تحميل الحجوزات')
     } finally {
       setLoading(false)
@@ -135,7 +155,7 @@ export default function DashboardPage() {
                     <strong className="text-slate-200 block md:inline">الخدمة: </strong><span className="text-white font-semibold">{booking.service?.name_ar || '—'}</span>
                   </p>
                   <p className="text-slate-300 py-2">
-                    <strong className="text-slate-200 block md:inline">الموعد: </strong><span className="text-gold-400 font-semibold">{booking.booking_time}</span>
+                    <strong className="text-slate-200 block md:inline">الموعد: </strong><span className="text-gold-400 font-semibold">{booking.booking_time?.substring(0, 5) || booking.booking_time}</span>
                   </p>
                   <p className="text-slate-300 py-2">
                     <strong className="text-slate-200 block md:inline">التاريخ: </strong>
