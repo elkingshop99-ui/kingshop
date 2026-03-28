@@ -89,8 +89,8 @@ export default function Header({ isStaff, onLogout }: HeaderProps) {
         </div>
 
         {/* Mobile Layout */}
-        <div className="md:hidden">
-          <div className="flex items-center justify-between gap-2">
+        <div className="md:hidden w-full">
+          <div className="flex items-center justify-between gap-2 w-full">
             <Link to="/" className="flex items-center gap-1 text-gold-400 hover:text-gold-300 transition-colors flex-shrink-0">
               <Scissors size={24} />
               <span className="text-lg font-bold">Elking</span>
@@ -104,11 +104,13 @@ export default function Header({ isStaff, onLogout }: HeaderProps) {
                 {i18n.language === 'ar' ? 'EN' : 'AR'}
               </button>
 
+              {/* Menu button - Always visible when staff is logged in */}
               {isStaff && (
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="p-2 bg-gold-500 hover:bg-gold-600 rounded text-white font-bold text-lg transition-colors"
+                  className="p-2 bg-gold-500 hover:bg-gold-600 rounded text-white font-bold text-lg transition-colors z-40 relative"
                   title="لوحة التحكم"
+                  aria-label="فتح لوحة التحكم"
                 >
                   {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
                 </button>
@@ -118,7 +120,7 @@ export default function Header({ isStaff, onLogout }: HeaderProps) {
 
           {/* Mobile Menu */}
           {isStaff && mobileMenuOpen && (
-            <nav className="mt-3 flex flex-col gap-2 bg-slate-800/50 p-3 rounded-lg border border-slate-700 animate-in fade-in slide-in-from-top-2">
+            <nav className="mt-3 flex flex-col gap-2 bg-slate-800/50 p-3 rounded-lg border border-slate-700 animate-in fade-in slide-in-from-top-2 z-30 relative">
               <Link
                 to="/queue"
                 className={`${navLinkClass('/queue')} text-center text-sm`}
