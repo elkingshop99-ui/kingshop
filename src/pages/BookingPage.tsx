@@ -197,10 +197,12 @@ export default function BookingPage() {
             .in('status', ['pending', 'confirmed'])
 
           if (!error && data) {
-            const booked = data.map((b: any) => b.booking_time)
+            const booked = (data || []).map((b: any) => b.booking_time)
             setBookedSlots(booked)
             console.log(`✅ Booked slots for ${selectedDate}:`, booked)
+            console.log(`📊 Slot count: ${booked.length}`)
           } else {
+            console.log('❌ Error fetching booked slots:', error)
             setBookedSlots([])
           }
         } catch (err: any) {
@@ -230,12 +232,15 @@ export default function BookingPage() {
                 compareTimeStrings(slot, hours.end_time) < 0
               )
               setAvailableSlots(slots)
+              console.log(`📅 Available slots from ${hours.start_time} to ${hours.end_time}:`, slots)
             } else {
               setAvailableSlots([])
+              console.log('❌ Barber not working on this day')
             }
           } else {
             setWorkingHours([])
             setAvailableSlots(TIME_SLOTS)
+            console.log('⚠️ No working hours defined, using all slots')
           }
         } catch (err: any) {
           console.error('Error fetching working hours:', err)
@@ -243,9 +248,10 @@ export default function BookingPage() {
         }
       }
       
+      // Call immediately first
       refreshData()
       
-      // Set up interval to refresh every 3 seconds for live updates
+      // Then set up interval to refresh every 3 seconds for live updates
       const refreshInterval = setInterval(() => {
         console.log(`🔄 Auto-refresh bookings...`)
         refreshData()
@@ -538,6 +544,25 @@ export default function BookingPage() {
             />
           </div>
 
+          {/* Debug: Show current time and booked slots */}
+          {selectedDate && (
+            <div className="bg-slate-800/50 border border-slate-700 rounded p-3 mb-4 text-xs space-y-2">
+              <div className="text-slate-300">
+                <strong>الوقت الحالي:</strong> {getCurrentTimeInEgypt().toLocaleTimeString('ar-EG', { 
+                  hour: '2-digit', 
+                  minute: '2-digit',
+                  timeZone: 'Africa/Cairo'
+                })}
+              </div>
+              <div className="text-slate-400">
+                <strong className="text-slate-200">أوقات متاحة:</strong> {availableSlots.length > 0 ? availableSlots.join(', ') : 'بدون أوقات'}
+              </div>
+              <div className="text-red-400">
+                <strong className="text-red-300">أوقات محجوزة:</strong> {bookedSlots.length > 0 ? bookedSlots.join(', ') : '✅ بدون محجوزات'}
+              </div>
+            </div>
+          )}
+
           {/* Time Slots Grid */}
           {selectedDate && (
             <div>
@@ -570,12 +595,13 @@ export default function BookingPage() {
               )}
 
               <div className="grid grid-cols-4 gap-2 mb-4">
-                {availableSlots.length > 0 ? (
-                  availableSlots.map((slot) => {
+                {TIME_SLOTS.length > 0 ? (
+                  TIME_SLOTS.map((slot) => {
                     const isBooked = bookedSlots.includes(slot)
                     const isPast = isPastTime(slot, selectedDate)
+                    const isOutsideWorkingHours = !availableSlots.includes(slot)
                     const isSelected = selectedTime === slot
-                    const isDisabled = isBooked || isPast
+                    const isDisabled = isBooked || isPast || isOutsideWorkingHours
 
                     return (
                       <button
@@ -588,14 +614,23 @@ export default function BookingPage() {
                             ? 'bg-red-500/30 border border-red-500 text-red-300 cursor-not-allowed opacity-50'
                             : isPast
                             ? 'bg-gray-500/30 border border-gray-500 text-gray-300 cursor-not-allowed opacity-50'
+                            : isOutsideWorkingHours
+                            ? 'bg-slate-900/50 border border-slate-700 text-slate-500 cursor-not-allowed opacity-30'
                             : isSelected
                             ? 'bg-gold-500 border border-gold-600 text-white shadow-lg'
                             : 'bg-slate-700 border border-slate-600 text-slate-200 hover:bg-slate-600 hover:border-slate-500'
                         }`}
+                        title={
+                          isBooked ? 'محجوز' : 
+                          isPast ? 'وقت مضى' : 
+                          isOutsideWorkingHours ? 'خارج ساعات العمل' : 
+                          'متاح'
+                        }
                       >
                         {slot}
                         {isBooked && <span className="text-xs block">محجوز</span>}
                         {isPast && <span className="text-xs block">مضى</span>}
+                        {isOutsideWorkingHours && !isBooked && !isPast && <span className="text-xs block opacity-50">مغلق</span>}
                       </button>
                     )
                   })
