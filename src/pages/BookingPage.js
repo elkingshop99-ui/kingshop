@@ -8,7 +8,7 @@ import { formatTime12Hour, formatTime12HourArabic } from '@/utils/formatTime';
 // Fixed time slots - 30 minute intervals
 const TIME_SLOTS = [
     '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-    '12:00', '12:30', '13:00',
+    '12:00', '12:30', '13:00', '13:30',
     '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
 ];
 // Format date to Arabic format
@@ -39,7 +39,7 @@ const getCurrentTimeInEgypt = () => {
     const egyptTime = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Cairo' }));
     return egyptTime;
 };
-// Check if booking time is in the past
+// Check if booking time is in the past (only for today)
 const isPastTime = (timeStr, dateStr) => {
     const now = getCurrentTimeInEgypt();
     const bookingDate = new Date(dateStr + 'T00:00:00');
@@ -47,13 +47,15 @@ const isPastTime = (timeStr, dateStr) => {
     if (bookingDate.toDateString() < now.toDateString()) {
         return true;
     }
-    // If booking date is today, check if time has passed
+    // Only check if time has passed for TODAY, not for future dates
     if (bookingDate.toDateString() === now.toDateString()) {
         const [hours, minutes] = timeStr.split(':').map(Number);
         const bookingTime = hours * 60 + minutes;
         const currentTime = now.getHours() * 60 + now.getMinutes();
-        return bookingTime <= currentTime;
+        // A time is past only if it's already finished (< instead of <=)
+        return bookingTime < currentTime;
     }
+    // For future dates, time is never considered past
     return false;
 };
 // Compare two time strings (HH:MM format)
@@ -465,7 +467,7 @@ export default function BookingPage() {
             }
         }
     };
-    return (_jsxs("main", { className: "min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-12", children: [_jsxs("div", { className: "max-w-4xl mx-auto px-4", children: [_jsxs("div", { className: "text-center mb-12", children: [_jsx("h1", { className: "text-4xl md:text-5xl font-bold text-white mb-2", children: t('booking.title') }), _jsx("p", { className: "text-xl text-slate-300", children: t('booking.subtitle') })] }), _jsxs("form", { onSubmit: handleSubmit, className: "bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-8 space-y-6", children: [_jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-slate-200 mb-2", children: t('booking.selectBarber') }), _jsxs("select", { value: selectedBarber, onChange: (e) => setSelectedBarber(e.target.value), className: "w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-gold-500 transition-colors", dir: isArabic ? 'rtl' : 'ltr', children: [_jsx("option", { value: "", children: t('booking.selectBarber') }), barbers.map((barber) => (_jsx("option", { value: barber.id, children: barber.name }, barber.id)))] })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-slate-200 mb-2", children: t('booking.selectService') }), _jsxs("select", { value: selectedService, onChange: (e) => setSelectedService(e.target.value), className: "w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-gold-500 transition-colors", dir: isArabic ? 'rtl' : 'ltr', children: [_jsx("option", { value: "", children: t('booking.selectService') }), services.map((service) => (_jsxs("option", { value: service.id, children: [service.name_ar, " - ", service.price, " \u062C.\u0645 (", service.duration_minutes, " \u062F\u0642\u064A\u0642\u0629)"] }, service.id)))] })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-slate-200 mb-2", children: t('booking.selectDate') }), _jsx("input", { type: "date", value: selectedDate, onChange: (e) => setSelectedDate(e.target.value), className: "w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-gold-500 transition-colors", min: new Date().toISOString().split('T')[0] })] }), selectedDate && (_jsxs("div", { children: [_jsxs("div", { className: "flex items-center justify-between mb-4", children: [_jsx("label", { className: "block text-sm font-medium text-slate-200", children: t('bookingAdvanced.availableSlots') }), _jsxs("button", { type: "button", onClick: () => {
+    return (_jsxs("main", { className: "min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-12", children: [_jsxs("div", { className: "max-w-4xl mx-auto px-4", children: [_jsxs("div", { className: "text-center mb-12", children: [_jsx("h1", { className: "text-4xl md:text-5xl font-bold text-white mb-2", children: t('booking.title') }), _jsx("p", { className: "text-xl text-slate-300", children: t('booking.subtitle') })] }), _jsxs("form", { onSubmit: handleSubmit, className: "bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-8 space-y-6", children: [_jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-slate-200 mb-2", children: t('booking.selectBarber') }), _jsxs("select", { value: selectedBarber, onChange: (e) => setSelectedBarber(e.target.value), className: "w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-gold-500 transition-colors", dir: isArabic ? 'rtl' : 'ltr', children: [_jsx("option", { value: "", children: t('booking.selectBarber') }), barbers.map((barber) => (_jsx("option", { value: barber.id, children: barber.name }, barber.id)))] })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-slate-200 mb-2", children: t('booking.selectService') }), _jsxs("select", { value: selectedService, onChange: (e) => setSelectedService(e.target.value), className: "w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-gold-500 transition-colors", dir: isArabic ? 'rtl' : 'ltr', children: [_jsx("option", { value: "", children: t('booking.selectService') }), services.map((service) => (_jsxs("option", { value: service.id, children: [service.name_ar, " - ", service.price, " \u062C.\u0645 (", service.duration_minutes, " \u062F\u0642\u064A\u0642\u0629)"] }, service.id)))] })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-slate-200 mb-2", children: t('booking.selectDate') }), _jsx("input", { type: "date", value: selectedDate, onChange: (e) => setSelectedDate(e.target.value), className: "w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-gold-500 transition-colors", min: new Date().toISOString().split('T')[0] })] }), selectedDate && (_jsxs("div", { children: [workingHours.length > 0 && workingHours[0]?.is_working ? (_jsx("div", { className: "bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 mb-4", children: _jsxs("p", { className: "text-blue-300 text-sm", children: ["\u23F0 \u0633\u0627\u0639\u0627\u062A \u0639\u0645\u0644 \u0627\u0644\u062D\u0644\u0627\u0642:", _jsxs("span", { className: "font-bold", children: [" ", formatTime12HourArabic(workingHours[0].start_time), " - ", formatTime12HourArabic(workingHours[0].end_time)] })] }) })) : null, _jsxs("div", { className: "flex items-center justify-between mb-4", children: [_jsx("label", { className: "block text-sm font-medium text-slate-200", children: t('bookingAdvanced.availableSlots') }), _jsxs("button", { type: "button", onClick: () => {
                                                     const nearest = availableSlots.find(slot => !bookedSlots.includes(slot) && !isPastTime(slot, selectedDate));
                                                     if (!nearest) {
                                                         toast.error('لا توجد مواعيد متاحة اليوم');

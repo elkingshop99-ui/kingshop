@@ -8,7 +8,7 @@ import { formatTime12Hour, formatTime12HourArabic } from '@/utils/formatTime'
 // Fixed time slots - 30 minute intervals
 const TIME_SLOTS = [
   '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-  '12:00', '12:30', '13:00',
+  '12:00', '12:30', '13:00', '13:30',
   '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
 ]
 
@@ -55,7 +55,7 @@ const getCurrentTimeInEgypt = (): Date => {
   return egyptTime
 }
 
-// Check if booking time is in the past
+// Check if booking time is in the past (only for today)
 const isPastTime = (timeStr: string, dateStr: string): boolean => {
   const now = getCurrentTimeInEgypt()
   const bookingDate = new Date(dateStr + 'T00:00:00')
@@ -65,14 +65,16 @@ const isPastTime = (timeStr: string, dateStr: string): boolean => {
     return true
   }
   
-  // If booking date is today, check if time has passed
+  // Only check if time has passed for TODAY, not for future dates
   if (bookingDate.toDateString() === now.toDateString()) {
     const [hours, minutes] = timeStr.split(':').map(Number)
     const bookingTime = hours * 60 + minutes
     const currentTime = now.getHours() * 60 + now.getMinutes()
-    return bookingTime <= currentTime
+    // A time is past only if it's already finished (< instead of <=)
+    return bookingTime < currentTime
   }
   
+  // For future dates, time is never considered past
   return false
 }
 
@@ -592,6 +594,16 @@ export default function BookingPage() {
           {/* Time Slots Grid */}
           {selectedDate && (
             <div>
+              {/* Working Hours Display */}
+              {workingHours.length > 0 && workingHours[0]?.is_working ? (
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 mb-4">
+                  <p className="text-blue-300 text-sm">
+                    ⏰ ساعات عمل الحلاق:
+                    <span className="font-bold"> {formatTime12HourArabic(workingHours[0].start_time)} - {formatTime12HourArabic(workingHours[0].end_time)}</span>
+                  </p>
+                </div>
+              ) : null}
+
               <div className="flex items-center justify-between mb-4">
                 <label className="block text-sm font-medium text-slate-200">{t('bookingAdvanced.availableSlots')}</label>
                 <button
