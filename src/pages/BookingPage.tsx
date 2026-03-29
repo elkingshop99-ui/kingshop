@@ -5,11 +5,12 @@ import toast from 'react-hot-toast'
 import { AlertCircle, Clock, CheckCircle2 } from 'lucide-react'
 import { formatTime12Hour, formatTime12HourArabic } from '@/utils/formatTime'
 
-// Fixed time slots - 30 minute intervals
+// Fixed time slots - 30 minute intervals (9 AM to 6 PM)
 const TIME_SLOTS = [
   '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
   '12:00', '12:30', '13:00', '13:30',
   '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
+  '17:00', '17:30', '18:00',
 ]
 
 interface WorkingHours {
@@ -272,7 +273,7 @@ export default function BookingPage() {
             if (hours.is_working) {
               const slots = TIME_SLOTS.filter(slot => 
                 compareTimeStrings(slot, hours.start_time) >= 0 &&
-                compareTimeStrings(slot, hours.end_time) < 0
+                compareTimeStrings(slot, hours.end_time) <= 0
               )
               setAvailableSlots(slots)
               console.log(`📅 Available slots from ${hours.start_time} to ${hours.end_time}:`, slots)
