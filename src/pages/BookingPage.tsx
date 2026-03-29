@@ -47,29 +47,42 @@ const normalizePhone = (phone: string) => {
   return normalized
 }
 
-// Get current time in Egypt timezone
-const getCurrentTimeInEgypt = (): Date => {
+// Get current date in Egypt timezone as YYYY-MM-DD string
+const getEgyptDateString = (): string => {
   const now = new Date()
-  // Egypt is UTC+2
-  const egyptTime = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Cairo' }))
-  return egyptTime
+  return now.toLocaleDateString('en-CA', { timeZone: 'Africa/Cairo' })
+}
+
+// Get current time in Egypt timezone as hours and minutes
+const getEgyptTime = (): { hours: number; minutes: number } => {
+  const now = new Date()
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'Africa/Cairo',
+  })
+  const parts = formatter.formatToParts(now)
+  const hours = parseInt(parts.find(p => p.type === 'hour')?.value || '0')
+  const minutes = parseInt(parts.find(p => p.type === 'minute')?.value || '0')
+  return { hours, minutes }
 }
 
 // Check if booking time is in the past (only for today)
 const isPastTime = (timeStr: string, dateStr: string): boolean => {
-  const now = getCurrentTimeInEgypt()
-  const bookingDate = new Date(dateStr + 'T00:00:00')
+  const egyptDate = getEgyptDateString()
+  const egyptTime = getEgyptTime()
   
   // If booking date is in the past, it's always past
-  if (bookingDate.toDateString() < now.toDateString()) {
+  if (dateStr < egyptDate) {
     return true
   }
   
   // Only check if time has passed for TODAY, not for future dates
-  if (bookingDate.toDateString() === now.toDateString()) {
+  if (dateStr === egyptDate) {
     const [hours, minutes] = timeStr.split(':').map(Number)
     const bookingTime = hours * 60 + minutes
-    const currentTime = now.getHours() * 60 + now.getMinutes()
+    const currentTime = egyptTime.hours * 60 + egyptTime.minutes
     // A time is past only if it's already finished (< instead of <=)
     return bookingTime < currentTime
   }
