@@ -269,12 +269,17 @@ export default function BookingPage() {
           if (!error && data && data.length > 0) {
             const hours = data[0] as WorkingHours
             setWorkingHours([hours])
+            console.log(`🕒 Fetched working hours:`, hours)
+            console.log(`   Start: ${hours.start_time}, End: ${hours.end_time}, Is Working: ${hours.is_working}`)
             
             if (hours.is_working) {
-              const slots = TIME_SLOTS.filter(slot => 
-                compareTimeStrings(slot, hours.start_time) >= 0 &&
-                compareTimeStrings(slot, hours.end_time) <= 0
-              )
+              const slots = TIME_SLOTS.filter(slot => {
+                const startCmp = compareTimeStrings(slot, hours.start_time)
+                const endCmp = compareTimeStrings(slot, hours.end_time)
+                const isValid = startCmp >= 0 && endCmp <= 0
+                console.log(`   ⏰ ${slot}: start_cmp=${startCmp} end_cmp=${endCmp} → ${isValid ? '✅ included' : '❌ excluded'}`)
+                return isValid
+              })
               setAvailableSlots(slots)
               console.log(`📅 Available slots from ${hours.start_time} to ${hours.end_time}:`, slots)
             } else {
